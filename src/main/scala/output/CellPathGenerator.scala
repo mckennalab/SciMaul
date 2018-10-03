@@ -21,7 +21,7 @@ object CellPathGenerator {
     assert(basePath.exists() && basePath.isDirectory, "The output path " + basePath + " doesn't exist or isn't a folder")
 
     var finalDir = basePath.getAbsolutePath
-    val subDirs = coordinate.coordinates.map{seq => seq}.mkString(File.separator)
+    val subDirs = coordinate.coordinates.map{seq => seq.sequence}.mkString(File.separator)
     val newDir = new File(finalDir + File.separator + subDirs)
 
     // if it doesn't exist, make it

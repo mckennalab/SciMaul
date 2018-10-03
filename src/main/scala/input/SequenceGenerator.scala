@@ -7,9 +7,10 @@ import main.scala.ReadContainer
 import transforms.ReadPosition
 import transforms.ReadPosition.ReadPosition
 
+import scala.collection.mutable
 import scala.io.Source
 
-class SequenceGenerator(inputs: Map[ReadPosition, File]) extends Iterator[ReadContainer] {
+class SequenceGenerator(inputs: mutable.LinkedHashMap[ReadPosition, File]) extends Iterator[ReadContainer] {
 
   val read1 : Iterator[String]#GroupedIterator[String] =
     SequenceGenerator.getLines(inputs(ReadPosition.Read1)).grouped(4)
@@ -23,7 +24,7 @@ class SequenceGenerator(inputs: Map[ReadPosition, File]) extends Iterator[ReadCo
   val index2 : Option[Iterator[String]#GroupedIterator[String]] =
     if (inputs contains ReadPosition.Index2) Some(SequenceGenerator.getLines(inputs(ReadPosition.Index2)).grouped(4)) else None
 
-  def getNextRead(): ReadContainer = {
+  private def getNextRead(): ReadContainer = {
     ReadContainer(
       groupToFastqRecord(read1.next),
       if (read2.isDefined) Some(groupToFastqRecord(read2.get.next)) else None,
@@ -36,9 +37,20 @@ class SequenceGenerator(inputs: Map[ReadPosition, File]) extends Iterator[ReadCo
     new FastqRecord(strings(0),strings(1),strings(2),strings(3))
   }
 
-  override def hasNext: Boolean = ???
+  // our next read
+  private var nextRead: Option[ReadContainer] = Some(getNextRead())
 
-  override def next(): ReadContainer = ???
+  override def hasNext: Boolean = nextRead.isDefined
+
+  override def next(): ReadContainer = {
+    assert(!nextRead.isDefined,"Next called on empty iterator")
+    val ret = nextRead.get
+    if (read1.hasNext)
+      nextRead = Some(getNextRead())
+    else
+      nextRead = None
+    ret
+  }
 }
 
 object SequenceGenerator {

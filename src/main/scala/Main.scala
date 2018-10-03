@@ -1,20 +1,15 @@
 package main.scala
 
-import _root_.algorithms.BarcodeEditDistance
-import _root_.algorithms.stats.OverlapCounts
 import java.io.{BufferedInputStream, File, PrintWriter}
-
-import net.sf.picard.fastq.{FastqReader, FastqRecord, FastqWriter, FastqWriterFactory}
-import java.util.logging.SimpleFormatter
-
-import main.scala.stats._
 import java.util.logging.{Level, Logger}
 
 import input.SequenceGenerator
-import main.scala.algorithms.ReadTrimmer
+import output.OutputManager
 import recipe.RecipeContainer
 import transforms.ReadPosition
 import transforms.ReadPosition.ReadPosition
+
+import scala.collection.mutable
 
 /**
  * created by aaronmck on 2/13/14
@@ -53,12 +48,12 @@ object Main extends App {
     head("Maul", "1.0")
 
     // *********************************** Read Inputs *******************************************************
-    opt[File]("inFQ1") required() valueName ("<file>") action { (x, c) => c.copy(inFastq1 = x)} text ("out first end reads FASTQ")
-    opt[File]("inFQ2") valueName ("<file>") action { (x, c) => c.copy(inFastq2 = x)} text ("the second end reads FASTQ")
-    opt[File]("inBarcodeFQ1") valueName ("<file>") action { (x, c) => c.copy(inBarcodeFQ1 = x)} text ("The fastq file with the first set of barcodes")
-    opt[File]("inBarcodeFQ2") valueName ("<file>") action { (x, c) => c.copy(inBarcodeFQ2 = x)} text ("The fastq file with the second set of barcodes")
-    opt[File]("recipe") valueName ("<file>") action { (x, c) => c.copy(recipe = x)} text ("A file containing the RT barcodes")
-    opt[File]("outputDirectory") required() valueName ("<file>") action { (x, c) => c.copy(outDir = x)} text ("where to place calls for each cell, in their own folder")
+    opt[File]("inFQ1")        required() valueName ("<file>") action { (x, c) => c.copy(inFastq1 = Some(x))} text ("out first end reads FASTQ")
+    opt[File]("inFQ2")                   valueName ("<file>") action { (x, c) => c.copy(inFastq2 = Some(x))} text ("the second end reads FASTQ")
+    opt[File]("inBarcodeFQ1")            valueName ("<file>") action { (x, c) => c.copy(inBarcodeFQ1 = Some(x))} text ("The fastq file with the first set of barcodes")
+    opt[File]("inBarcodeFQ2")            valueName ("<file>") action { (x, c) => c.copy(inBarcodeFQ2 = Some(x))} text ("The fastq file with the second set of barcodes")
+    opt[File]("recipe")       required() valueName ("<file>") action { (x, c) => c.copy(recipe = Some(x))} text ("A file containing the RT barcodes")
+    opt[File]("outputDir")    required() valueName ("<file>") action { (x, c) => c.copy(outDir = Some(x))} text ("where to place calls for each cell, in their own folder")
 
     // some general command-line setup stuff
     note("Split the reads into output fastq files\n")
@@ -77,24 +72,27 @@ object Main extends App {
       val perWhat = 1000000 // output status for every X reads -- the associated message text may have to change as well
 
       // setup the input reader
-      val reads = new SequenceGenerator(Map[ReadPosition,File](
-        (ReadPosition.Read1  -> config.inFastq1),
-        (ReadPosition.Read2  -> config.inFastq2),
-        (ReadPosition.Index1 -> config.inBarcodeFQ1),
-        (ReadPosition.Index2 -> config.inBarcodeFQ2)))
+      val readTypeToFile = mutable.LinkedHashMap[ReadPosition, File]()
+      readTypeToFile(ReadPosition.Read1) = config.inFastq1.get
+      if (config.inFastq2.isDefined) readTypeToFile(ReadPosition.Read2) = config.inFastq2.get
+      if (config.inBarcodeFQ1.isDefined) readTypeToFile(ReadPosition.Index1) = config.inBarcodeFQ1.get
+      if (config.inBarcodeFQ2.isDefined) readTypeToFile(ReadPosition.Index2) = config.inBarcodeFQ2.get
+
+      val reads = new SequenceGenerator(readTypeToFile)
 
       // read in the recipe file, and load up any barcode definition files
-      val recipe = new RecipeContainer(config.recipe.getAbsolutePath)
+      val recipe = new RecipeContainer(config.recipe.get.getAbsolutePath)
 
       // create an output object
-
+      val outputManager = new OutputManager(recipe, config.outDir.get ,config.bufferSize , readTypeToFile.keysIterator.toArray)
 
       // create read transforms from the recipe we've loaded
+      while (reads.hasNext) {
+        val nextRead = reads.next()
+        outputManager.addRead(nextRead)
+      }
 
-
-
-
-      // process each read into the output object
+      // close everything up
 
     }
   } getOrElse {
@@ -106,11 +104,12 @@ object Main extends App {
 /*
  * the configuration class, it stores the user's arguments from the command line, also set defaults here
  */
-case class Config(inFastq1: File = new File(Main.NOTAREALFILENAME),
-                  inFastq2: File = new File(Main.NOTAREALFILENAME),
-                  inBarcodeFQ1: File = new File(Main.NOTAREALFILENAME),
-                  inBarcodeFQ2: File = new File(Main.NOTAREALFILENAME),
-                  outDir: File = new File(Main.NOTAREALFILENAME),
-                  recipe: File = new File(Main.NOTAREALFILENAME)
+case class Config(inFastq1: Option[File] = None,
+                  inFastq2: Option[File] = None,
+                  inBarcodeFQ1: Option[File] = None,
+                  inBarcodeFQ2: Option[File] = None,
+                  outDir: Option[File] = None,
+                  recipe: Option[File] = None,
+                  bufferSize: Int = 100
                   )
 

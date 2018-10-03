@@ -1,6 +1,6 @@
 package output
 
-
+@deprecated
 sealed trait OutputType { def extension: String; def name: String  }
 
 case object SAM extends OutputType { def extension = ".sam"; def name = "SAM" }

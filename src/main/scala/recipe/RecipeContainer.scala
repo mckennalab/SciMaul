@@ -28,14 +28,13 @@ class RecipeContainer(input: String) {
   // convert the dimensions into resolved dimensions
   // .filter(p => p.sequences.isDefined)
   val resolvedDimensions = recipe.barcodes.map { bc => {
-    val barcodeArray = if (bc.sequences.get startsWith File.separator)
-      (bc.name, RecipeContainer.toSequenceArray(bc.sequences.get))
-    else
-      (bc.name, RecipeContainer.toSequenceArray(basePath + File.separator + bc.sequences.get))
-
+    val barcodeArray = bc.sequences match {
+      case None => (bc.name, Array[Sequence]())
+      case Some(c) if c.startsWith(File.separator) => (bc.name, RecipeContainer.toSequenceArray(bc.sequences.get))
+      case Some(c) => (bc.name, RecipeContainer.toSequenceArray(basePath + File.separator + bc.sequences.get))
+    }
     ResolvedDimension(bc, barcodeArray._2)
-  }
-  }
+  }}
 }
 
 object RecipeContainer {

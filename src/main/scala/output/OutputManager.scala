@@ -65,4 +65,8 @@ class OutputManager(recipeContainer: RecipeContainer, basePath: File, bufferSize
       coordinateToCell(coordinateString) = new OutputCell(coordinate,path,bufferSize,readType)
     }
   }
+
+  def close(): Unit = {
+    coordinateToCell.foreach{case(id,cell) => cell.close()}
+  }
 }

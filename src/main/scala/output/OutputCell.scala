@@ -30,6 +30,7 @@ class OutputCell(coordinates: Coordinate, path: File, bufferSize: Int, readType:
   // Our read buffer: to make things as fast as possible we'll allocate an array of the set size, and watch for overflow
   var currentIndex = 0
   val readBuffer = new Array[ReadContainer](bufferSize)
+  var haveWritten = false
 
 
   val readOutput = readType.map{ readType => {
@@ -49,8 +50,12 @@ class OutputCell(coordinates: Coordinate, path: File, bufferSize: Int, readType:
     currentIndex += 1
   }
 
+  /**
+    * flush out any reads we have in storage -- only if we've written already, otherwise this is
+    * a garbage cell (below the threshold) and shouldn't be output
+    */
   def close(): Unit = {
-    if (currentIndex >= bufferSize) {
+    while (haveWritten && currentIndex >= 0) {
       // write the reads out to disk -- but just up to the index size
       readType.foreach{tp =>
         OutputCell.writeReadToFastqFile(readOutput(tp), readBuffer.slice(0,currentIndex), tp)
@@ -74,14 +79,13 @@ object OutputCell {
   val nameSeparator = "."
   val keyValueSeparator = "->"
 
-  def writeToSamFile(path: File, reads: ReadContainer, header: SAMFileHeader): Unit = {
-    val samRecord = new SAMRecord(header)
-    samRecord.setReadBases(reads.read1.getReadString.toCharArray.map{c => c.toByte})
-    samRecord.setOriginalBaseQualities(reads.read1.getBaseQualityString.toArray.map{c => c.toByte})
-    samRecord.setReadName(reads.read1.getReadHeader)
-  }
-
-
+  /**
+    * write a read to a fastq file -- this function is a bit weird, as we should pass a matched tuple,
+    * as we assume the calling function has correctly determined the path
+    * @param path the file path to write to
+    * @param reads the reads
+    * @param read which read type we want to write
+    */
   def writeReadToFastqFile(path: File, reads: Array[ReadContainer], read: ReadPosition): Unit = {
     val output = gosAppend(path.getAbsolutePath)
     reads.foreach { rd =>
@@ -96,6 +100,12 @@ object OutputCell {
 
   }
 
+  /**
+    * write a read out to disk
+    * @param output the output to write to
+    * @param read the read
+    * @param annotations any annotations that have to be put in the readname
+    */
   def writeRecordToFastq(output: PrintWriter, read: FastqRecord, annotations: mutable.HashMap[String,String]): Unit = {
 
     // create the new read name

@@ -1,7 +1,6 @@
 package test.scala.stats
 
 import algorithms.BarcodeEditDistance
-import algorithms.stats.OverlapCounts
 import org.scalatest.{FlatSpec, Matchers}
 
 /**

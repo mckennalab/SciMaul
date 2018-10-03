@@ -3,7 +3,6 @@ package recipe
 
 import algorithms.BarcodeEditDistance
 import org.scalatest.{FlatSpec, Matchers}
-import main.scala.stats.BarcodeOccurance
 
 
 class RecipeContainerTest extends FlatSpec with Matchers {
