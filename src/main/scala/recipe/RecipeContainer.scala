@@ -3,14 +3,18 @@ package recipe
 import java.io.File
 
 import barcodes.FastBarcode
+import com.typesafe.scalalogging.LazyLogging
 import org.json4s._
 import org.json4s.native.JsonMethods._
 import recipe.sequence.Sequence
+import utils.BitEncoding
 
 import scala.collection.mutable
 import scala.io.Source
 
-class RecipeContainer(input: String) {
+class RecipeContainer(input: String) extends LazyLogging {
+
+  logger.info("Parsing the recipe file : " + input)
 
   // parse a default format
   implicit val formats = DefaultFormats
@@ -33,6 +37,7 @@ class RecipeContainer(input: String) {
       case Some(c) if c.startsWith(File.separator) => (bc.name, RecipeContainer.toSequenceArray(bc.sequences.get))
       case Some(c) => (bc.name, RecipeContainer.toSequenceArray(basePath + File.separator + bc.sequences.get))
     }
+    logger.info("Loaded " + barcodeArray._2.size + " barcodes for dimension " + bc.name)
     ResolvedDimension(bc, barcodeArray._2)
   }}
 }
@@ -45,7 +50,7 @@ object RecipeContainer {
       Sequence(
         line.split("\t")(0),
         line.split("\t")(1),
-        FastBarcode.toFastBarcode(line.split("\t")(1)))
+        BitEncoding.bitEncodeString(line.split("\t")(1)))
     }.toArray
   }
 }

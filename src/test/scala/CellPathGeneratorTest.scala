@@ -13,6 +13,7 @@ import recipe.sequence.Sequence
 import transforms.{ReadPosition, SequenceType}
 import transforms.ReadPosition._
 import transforms.SequenceType._
+import utils.BitEncoding
 
 class CellPathGeneratorTest extends FlatSpec with Matchers {
   "CellPathGenerator" should "generate a basic path correctly" in {
@@ -23,8 +24,8 @@ class CellPathGeneratorTest extends FlatSpec with Matchers {
     val fakeDim2 = ResolvedDimension("name2",ReadPosition.Read1, 0, 10, SequenceType.Index, Array[Sequence]())
     val dims = Array[ResolvedDimension](fakeDim1,fakeDim2)
 
-    val seq1 = Sequence("A1","AAAAAAAAAA",FastBarcode.toFastBarcode("AAAAAAAAAA"))
-    val seq2 = Sequence("A2","TTTTTTTTTT",FastBarcode.toFastBarcode("TTTTTTTTTT"))
+    val seq1 = Sequence("A1","AAAAAAAAAA",BitEncoding.bitEncodeString("AAAAAAAAAA"))
+    val seq2 = Sequence("A2","TTTTTTTTTT",BitEncoding.bitEncodeString("TTTTTTTTTT"))
     val seqs = Array[Sequence](seq1,seq2)
 
     val fakeCoordinate = new Coordinate(dims,seqs)

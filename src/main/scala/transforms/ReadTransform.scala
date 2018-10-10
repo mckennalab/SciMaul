@@ -16,4 +16,4 @@ trait ReadTransform {
   def isDimensioned: Boolean
 }
 
-case class TransforedReadAndDimension(readContainer: ReadContainer, sequence: String)
+case class TransforedReadAndDimension(readContainer: ReadContainer, sequence: Option[String])

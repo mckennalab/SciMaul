@@ -10,8 +10,10 @@ import transforms.ReadPosition.ReadPosition
 import scala.collection.mutable.ArrayBuffer
 import java.util.zip._
 
+import com.typesafe.scalalogging.LazyLogging
 import htsjdk.samtools.fastq.FastqRecord
 import recipe.Coordinate
+import stats.CellStats
 import transforms.ReadPosition
 
 import scala.collection.mutable
@@ -25,16 +27,18 @@ import scala.collection.mutable
   * @param readType what type of reads are we expecting to see
   * @param outputType what file type do we write to?
   */
-class OutputCell(coordinates: Coordinate, path: File, bufferSize: Int, readType: Array[ReadPosition]) {
+class OutputCell(coordinates: Coordinate, path: File, bufferSize: Int, readType: Array[ReadPosition], cellPrefix: String = "cell") extends LazyLogging {
 
   // Our read buffer: to make things as fast as possible we'll allocate an array of the set size, and watch for overflow
   var currentIndex = 0
   val readBuffer = new Array[ReadContainer](bufferSize)
   var haveWritten = false
 
+  // our statistics about the reads
+  val stats = new CellStats(coordinates, readType)
 
   val readOutput = readType.map{ readType => {
-    (readType,new File(path + File.separator + ReadPosition.fileExtension(readType)))
+    (readType,new File(path + File.separator + OutputCell.cellName + OutputCell.suffixSeparator + ReadPosition.fileExtension(readType)))
   }}.toMap
 
 
@@ -44,6 +48,8 @@ class OutputCell(coordinates: Coordinate, path: File, bufferSize: Int, readType:
       readType.foreach{tp =>
         OutputCell.writeReadToFastqFile(readOutput(tp), readBuffer, tp)
       }
+
+      logger.info("Wrote " + currentIndex + " reads to cell " + path)
       currentIndex = 0
     }
     readBuffer(currentIndex) = read
@@ -55,21 +61,25 @@ class OutputCell(coordinates: Coordinate, path: File, bufferSize: Int, readType:
     * a garbage cell (below the threshold) and shouldn't be output
     */
   def close(): Unit = {
-    while (haveWritten && currentIndex >= 0) {
+    logger.info("Current size = " + currentIndex)
+    if (/* haveWritten && */ currentIndex >= 0) {
       // write the reads out to disk -- but just up to the index size
-      readType.foreach{tp =>
+      readType.foreach{tp => {
         OutputCell.writeReadToFastqFile(readOutput(tp), readBuffer.slice(0,currentIndex), tp)
-      }
-      currentIndex = 0
+        logger.info("-- Current size = " + currentIndex)
+      }}
+      currentIndex = -1
     }
   }
 
+  def collectStats(): CellStats = stats
 }
+
 
 /**
   * static methods on the OutputCell
   */
-object OutputCell {
+object OutputCell extends LazyLogging {
 
   // read in compressed input and output streams with scala source commands
   def gis(s: String) = new GZIPInputStream(new BufferedInputStream(new FileInputStream(s)))
@@ -78,6 +88,8 @@ object OutputCell {
   // the separator
   val nameSeparator = "."
   val keyValueSeparator = "->"
+  val suffixSeparator = "."
+  val cellName = "cell"
 
   /**
     * write a read to a fastq file -- this function is a bit weird, as we should pass a matched tuple,
@@ -87,10 +99,11 @@ object OutputCell {
     * @param read which read type we want to write
     */
   def writeReadToFastqFile(path: File, reads: Array[ReadContainer], read: ReadPosition): Unit = {
+    logger.info("Writing to " + path)
     val output = gosAppend(path.getAbsolutePath)
     reads.foreach { rd =>
       read match {
-        case ReadPosition.Read1 => writeRecordToFastq(output,rd.read1,rd.metaData)
+        case ReadPosition.Read1 => writeRecordToFastq(output,rd.read1.get,rd.metaData)
         case ReadPosition.Read2 => writeRecordToFastq(output,rd.read2.get,rd.metaData)
         case ReadPosition.Index1 => writeRecordToFastq(output,rd.index1.get,rd.metaData)
         case ReadPosition.Index2 => writeRecordToFastq(output,rd.index2.get,rd.metaData)

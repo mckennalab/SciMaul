@@ -17,7 +17,7 @@
  *
  */
 
-package Utils
+package utils
 
 import java.lang.{Long => JavaLong}
 import java.math.BigInteger
@@ -51,6 +51,21 @@ object BitEncoding {
 
 
   def mask(stringSize: Int) = stringMask >> (64 - (stringSize * 2))
+
+  /**
+    * create a mask that blanks a particular base out for comparison
+    * @param stringSize the string size we're working with
+    * @param baseToBlank the base; zero indexed (the first base is 0, second is 1, etc)
+    * @return a new mask for bit comparison
+    */
+  def blankBaseMask(stringSize: Int, baseToBlank: Int): Long = {
+    assert(baseToBlank < stringSize, "You can't blank a base past the end of the string")
+    assert(baseToBlank >= 0, "You can't blank a a negative index")
+
+    val initialMask = mask(stringSize)
+    val singleBase = 0x3 << (((stringSize - baseToBlank) - 1) * 2)
+    initialMask ^ singleBase
+  }
 
   /**
     * encode our target string and count into a 64-bit Long

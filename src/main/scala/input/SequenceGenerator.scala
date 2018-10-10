@@ -26,7 +26,7 @@ class SequenceGenerator(inputs: mutable.LinkedHashMap[ReadPosition, File]) exten
 
   private def getNextRead(): ReadContainer = {
     ReadContainer(
-      groupToFastqRecord(read1.next),
+      Some(groupToFastqRecord(read1.next)),
       if (read2.isDefined) Some(groupToFastqRecord(read2.get.next)) else None,
       if (index1.isDefined) Some(groupToFastqRecord(index1.get.next)) else None,
       if (index2.isDefined) Some(groupToFastqRecord(index2.get.next)) else None
@@ -43,7 +43,7 @@ class SequenceGenerator(inputs: mutable.LinkedHashMap[ReadPosition, File]) exten
   override def hasNext: Boolean = nextRead.isDefined
 
   override def next(): ReadContainer = {
-    assert(!nextRead.isDefined,"Next called on empty iterator")
+    assert(nextRead.isDefined,"Next called on empty iterator")
     val ret = nextRead.get
     if (read1.hasNext)
       nextRead = Some(getNextRead())
@@ -54,7 +54,11 @@ class SequenceGenerator(inputs: mutable.LinkedHashMap[ReadPosition, File]) exten
 }
 
 object SequenceGenerator {
-  def getLines(fl: File): Iterator[String] = Source.fromFile(fl.getAbsolutePath).getLines()
+  def getLines(fl: File): Iterator[String] =
+    if (fl.getAbsolutePath.endsWith(".gz") || fl.getAbsolutePath.endsWith(".gzip"))
+      Source.fromInputStream(utils.FileUtils.gis(fl.getAbsolutePath)).getLines()
+    else
+      Source.fromFile(fl.getAbsolutePath).getLines()
 }
 
 

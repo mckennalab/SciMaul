@@ -6,10 +6,10 @@ package transforms
   */
 object ReadPosition extends Enumeration {
   type ReadPosition = Value
-  val Read1 = Value(".read1")
-  val Read2 = Value(".read2")
-  val Index1 = Value(".index1")
-  val Index2 = Value(".index2")
+  val Read1 = Value("read1")
+  val Read2 = Value("read2")
+  val Index1 = Value("index1")
+  val Index2 = Value("index2")
 
   def fromString(str: String): ReadPosition = str.toUpperCase match {
     case "READ1" => Read1

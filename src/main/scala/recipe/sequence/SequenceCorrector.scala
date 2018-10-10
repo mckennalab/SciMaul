@@ -1,8 +1,9 @@
 package recipe.sequence
 
-import barcodes.FastBarcode
+import barcodes.{BarcodeTrio, FastBarcode}
 import barcodes.FastBarcode.FastBarcode
 import recipe.ResolvedDimension
+import utils.BitEncoding
 
 import scala.collection.mutable
 
@@ -21,29 +22,35 @@ class SequenceCorrector(resolvedDimension: ResolvedDimension) {
         sequenceMapping(fb) = SequenceAndError(seq,1)}
   }}
 
+  val conversionMemory = new mutable.HashMap[String,BarcodeTrio]()
+
   /**
-    * correct an observed sequence to a set barcode, with a distance
+    * correct an observed sequence to a set barcode, within a max distance (counting Ns in the barcode as
+    * an automatic mismatch)
     * @param string the sequence
     * @return the corrected sequence and distance
     */
-  def correctSequence(string: String): SequenceAndError = {
+  def correctSequence(string: String, maxDist: Int = 2): Option[SequenceAndError] = {
     assert(string.size == resolvedDimension.length, "This barcode is of the wrong length: " + string + " (should be len " + resolvedDimension.length + ")")
-    val fb = FastBarcode.toFastBarcode(string)
-    if (sequenceMapping contains fb)
-      return sequenceMapping(fb)
+
+    // our hashed barcode lookup
+    val fb = conversionMemory.getOrElseUpdate(string,FastBarcode.toFastBarcodeWithMismatches(string))
+
+    if (sequenceMapping contains fb.barcode)
+      return Some(SequenceAndError(sequenceMapping(fb.barcode).sequence,sequenceMapping(fb.barcode).error + fb.mismatches))
 
     // this is where things get much more expensive -- we have to look through the whole list and
     // find the closest hit
     var bestHitScore = Int.MaxValue
     var bestHit : Option[SequenceAndError] = None
     resolvedDimension.sequences.foreach{case(sqs) => {
-      val mm = FastBarcode.mismatches(fb,FastBarcode.toFastBarcode(sqs.sequence),mask)
-      if (mm < bestHitScore) {
+      val mm = FastBarcode.mismatches(fb.barcode,sqs.fastBarcode,fb.mask) + fb.mismatches
+      if (mm <= maxDist && mm < bestHitScore) {
         bestHit = Some(SequenceAndError(sqs,mm))
         bestHitScore = mm
       }
     }}
-    bestHit.get
+    bestHit
   }
 }
 
@@ -68,6 +75,6 @@ object SequenceCorrector {
   }
 
   def toFastBarcodeList(strings: List[String]): List[FastBarcode] = {
-    strings.map{str => FastBarcode.toFastBarcode(str)}
+    strings.map{str => BitEncoding.bitEncodeString(str)}
   }
 }
