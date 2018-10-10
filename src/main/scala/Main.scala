@@ -5,6 +5,7 @@ import java.util.logging.{Level, Logger}
 
 import input.SequenceGenerator
 import output.OutputManager
+import picocli.CommandLine
 import recipe.RecipeContainer
 import transforms.ReadPosition
 import transforms.ReadPosition.ReadPosition
@@ -39,30 +40,36 @@ import scala.collection.mutable
   * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
   *
   */
-@Command(name = "SCIMaul", version = Array("1.0"),
+@Command(name = "SCIMaul", version = Array("1.0"), sortOptions = false,
   description = Array("@|bold SCIMaul|@ @|underline Process single-cell sequencing reads into |@ single cells"))
-object Main extends App {
+class Main extends Runnable {
 
-  @Option(names = Array("-fq1", "--fastq1"), required = true, paramLabel = "FILE", description = Array("the first fastq file"))
+  @Option(names = Array("-fq1", "--fastq1"), required = true, paramLabel = "FILE", description = Array("the first read fastq file"))
   private var fastq1: File = new File("")
 
-  @Option(names = Array("-fq2", "--fastq2"), paramLabel = "FILE", description = Array("the count"))
+  @Option(names = Array("-fq2", "--fastq2"), paramLabel = "FILE", description = Array("the second read fastq file"))
   private var fastq2: File = new File("")
 
-  @Option(names = Array("-bc1", "--barcode1"), paramLabel = "FILE", description = Array("the count"))
+  @Option(names = Array("-bc1", "--barcode1"), paramLabel = "FILE", description = Array("the first index fastq file"))
   private var barcode1: File = new File("")
 
-  @Option(names = Array("-bc1", "--barcode2"), paramLabel = "FILE", description = Array("the count"))
+  @Option(names = Array("-bc2", "--barcode2"), paramLabel = "FILE", description = Array("the second index fastq file"))
   private var barcode2: File = new File("")
 
-  @Option(names = Array("-rc", "--recipe"), required = true, paramLabel = "FILE", description = Array("the count"))
+  @Option(names = Array("-rc", "--recipe"), required = true, paramLabel = "FILE", description = Array("the recipe file"))
   private var recipeFile: File = new File("")
 
-  @Option(names = Array("-out", "--outputDir"), required = true, paramLabel = "FILE", description = Array("the count"))
+  @Option(names = Array("-out", "--outputDir"), required = true, paramLabel = "FILE", description = Array("the output directory"))
   private var outputDir: File = new File("")
 
-  @Option(names = Array("-buffer", "--outputDir"), paramLabel = "FILE", description = Array("the count"))
+  @Option(names = Array("-buffer", "--buffer"), paramLabel = "FILE", description = Array("the number of reads we should buffer before outputing"))
   private var bufferSize: Int = 100
+
+  @Option(names = Array("-h", "--help"), usageHelp = true, description = Array("print this help and exit"))
+  private var helpRequested: Boolean = false
+
+  @Option(names = Array("-V", "--version"), versionHelp = true, description = Array("print version info and exit"))
+  private var versionRequested: Boolean = false
 
   // *********************************************************************************
   // setup the logging
@@ -70,35 +77,50 @@ object Main extends App {
   val logger = Logger.getLogger("SCIMaul")
   logger.setLevel(Level.INFO)
 
-  // *********************************************************************************
-  // setup the inputs, mapping the read type to the input file if it exists
-  val readTypeToFile = mutable.LinkedHashMap[ReadPosition, File]()
-  readTypeToFile(ReadPosition.Read1) = fastq1
-  if (fastq2.exists()) readTypeToFile(ReadPosition.Read2) = fastq2
-  if (barcode1.exists()) readTypeToFile(ReadPosition.Index1) = barcode1
-  if (barcode2.exists()) readTypeToFile(ReadPosition.Index2) = barcode2
+  override def run(): Unit = {
+    if (helpRequested) {
+      new CommandLine(this).usage(System.err)
+    } else if (versionRequested) {
+      new CommandLine(this).printVersionHelp(System.err)
+    } else {
 
-  // *********************************************************************************
-  // process the input reads into cells
-  val reads = new SequenceGenerator(readTypeToFile)
+      // *********************************************************************************
+      // setup the inputs, mapping the read type to the input file if it exists
+      val readTypeToFile = mutable.LinkedHashMap[ReadPosition, File]()
+      readTypeToFile(ReadPosition.Read1) = fastq1
+      if (fastq2.exists()) readTypeToFile(ReadPosition.Read2) = fastq2
+      if (barcode1.exists()) readTypeToFile(ReadPosition.Index1) = barcode1
+      if (barcode2.exists()) readTypeToFile(ReadPosition.Index2) = barcode2
 
-  // read in the recipe file, and load up any barcode definition files
-  val recipeManager = new RecipeContainer(recipeFile.getAbsolutePath)
+      // *********************************************************************************
+      // process the input reads into cells
+      val reads = new SequenceGenerator(readTypeToFile)
 
-  // create an output object
-  val outputManager = new OutputManager(recipeManager, outputDir, bufferSize, readTypeToFile.keysIterator.toArray)
+      // read in the recipe file, and load up any barcode definition files
+      val recipeManager = new RecipeContainer(recipeFile.getAbsolutePath)
 
-  // create read transforms from the recipe we've loaded
-  var readsProcessed = 0
-  while (reads.hasNext) {
-    val nextRead = reads.next()
-    outputManager.addRead(nextRead)
-    readsProcessed += 1
-    if (readsProcessed % 100000 == 0) logger.info("Processed " + readsProcessed + " reads so far")
+      // create an output object
+      val outputManager = new OutputManager(recipeManager, outputDir, bufferSize, readTypeToFile.keysIterator.toArray)
+
+      // create read transforms from the recipe we've loaded
+      var readsProcessed = 0
+      while (reads.hasNext) {
+        val nextRead = reads.next()
+        outputManager.addRead(nextRead)
+        readsProcessed += 1
+        if (readsProcessed % 100000 == 0) logger.info("Processed " + readsProcessed + " reads so far")
+      }
+
+      // close everything up
+      outputManager.close()
+
+    }
   }
-
-  // close everything up
-  outputManager.close()
-
 }
 
+
+object Main {
+  def main(args: Array[String]) {
+    CommandLine.run(new Main(), System.err, args: _*)
+  }
+}

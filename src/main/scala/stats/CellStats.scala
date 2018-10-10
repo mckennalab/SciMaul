@@ -10,15 +10,13 @@ import scala.collection.mutable
 
 class CellStats(coordinates: Coordinate, readsCovered: Array[ReadPosition]) {
 
-  val cellStats = Array[CellStat](new ReadCount(),new ReadLength(), new AverageQual(readsCovered))
+  val cellStats = Array[CellStat](new ReadCount(),new ReadLength(readsCovered), new AverageQual(readsCovered))
 
   def addRead(read: ReadContainer): Unit = {
     cellStats.foreach{cs => cs.addRead(read)}
   }
 
-  def header(sep: String = "\t"): String = cellStats.flatMap{cs => cs.name}.mkString(sep)
-
-  def stats(sep: String = "\t"): String = cellStats.flatMap{cs => cs.stat}.mkString(sep)
+  def name: String = "Cell" + Coordinate.seperator + coordinates.coordinateString()
 }
 
 trait CellStat {
@@ -37,14 +35,24 @@ class ReadCount extends CellStat {
   override def stat= Array[String](readCount.toString)
 }
 
-class ReadLength extends CellStat {
-  var readLength = 0
+class ReadLength(reads: Array[ReadPosition]) extends CellStat {
+  var totalLen = new mutable.LinkedHashMap[ReadPosition,Long]()
+  var readCount = 0
 
-  override def addRead(read: ReadContainer): Unit = {readLength += 1}
+  reads.foreach{rt => {
+    totalLen(rt) = 0
+  }}
 
-  override def name = Array[String]("readLength")
+  override def addRead(read: ReadContainer): Unit = {
+    reads.foreach{rd => {
+      totalLen(rd) += read.readFromContainer(rd).get.getReadString.size
+    }}
+    readCount += 1
+  }
 
-  override def stat = Array[String](readLength.toString)
+  override def name = totalLen.keys.toArray.map{c => "averageLength" + c.toString}
+
+  override def stat = totalLen.map{case(c,v) => (v.toDouble / readCount).toString}.toArray
 }
 
 
@@ -65,7 +73,7 @@ class AverageQual(reads: Array[ReadPosition]) extends CellStat {
     }}
   }
 
-  override def name = totalQual.keys.toArray.map{c => "averageQual" + c.toString}
+  override def name = totalQual.keys.toArray.map{c => "averageQuality" + c.toString}
 
   override def stat = totalQual.map{case(c,v) => (v.toDouble / baseCount(c).toDouble).toString}.toArray
 }

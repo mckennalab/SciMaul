@@ -31,7 +31,7 @@ class CellPathGeneratorTest extends FlatSpec with Matchers {
     val fakeCoordinate = new Coordinate(dims,seqs)
 
     val path = CellPathGenerator.outputPath(baseDir,fakeCoordinate)
-    val expectedResult = new File(base + File.separator + seq1.sequence + File.separator + seq2.sequence)
+    val expectedResult = new File(base + File.separator + seq1.name + File.separator + seq2.name)
 
     ((path.getAbsolutePath) should be (expectedResult.getAbsolutePath))
   }

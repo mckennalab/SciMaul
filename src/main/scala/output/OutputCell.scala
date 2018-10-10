@@ -54,6 +54,9 @@ class OutputCell(coordinates: Coordinate, path: File, bufferSize: Int, readType:
     }
     readBuffer(currentIndex) = read
     currentIndex += 1
+
+    // record any statistics about the read
+    stats.addRead(read)
   }
 
   /**
@@ -66,7 +69,6 @@ class OutputCell(coordinates: Coordinate, path: File, bufferSize: Int, readType:
       // write the reads out to disk -- but just up to the index size
       readType.foreach{tp => {
         OutputCell.writeReadToFastqFile(readOutput(tp), readBuffer.slice(0,currentIndex), tp)
-        logger.info("-- Current size = " + currentIndex)
       }}
       currentIndex = -1
     }

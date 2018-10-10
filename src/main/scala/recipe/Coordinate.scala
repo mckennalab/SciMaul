@@ -10,11 +10,9 @@ import recipe.sequence.Sequence
   */
 case class Coordinate(dimensions: Array[ResolvedDimension], coordinates: Array[Sequence]) {
 
-  def coordinateString(): String = coordinates.mkString(Coordinate.seperator)
+  def coordinateString(): String = coordinates.map{c => c.name}.mkString(Coordinate.seperator)
 }
 
 object Coordinate {
   val seperator = "."
-
-
 }

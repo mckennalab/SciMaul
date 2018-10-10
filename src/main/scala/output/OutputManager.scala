@@ -1,6 +1,6 @@
 package output
 
-import java.io.File
+import java.io.{File, PrintWriter}
 
 import com.typesafe.scalalogging.LazyLogging
 import main.scala.ReadContainer
@@ -84,7 +84,7 @@ class OutputManager(recipeContainer: RecipeContainer, basePath: File, bufferSize
       }
     } else {
       unassignedReads += 1
-      if (unassignedReads % 1000 == 0) println("failed to assign " + unassignedReads + " reads so far")
+      if (unassignedReads % 10000 == 0) logger.info("failed to assign " + unassignedReads + " reads so far")
       cellOfTheUnknown.addRead(read)
     }
 
@@ -92,8 +92,27 @@ class OutputManager(recipeContainer: RecipeContainer, basePath: File, bufferSize
   }
 
   def close(): Unit = {
-    logger.info("CLosing cell output files")
+    logger.info("Closing cell output files")
     coordinateToCell.foreach{case(id,cell) => cell.close()}
     cellOfTheUnknown.close()
+
+    logger.info("Generating master statistics file")
+
+    val output = new PrintWriter(basePath.getAbsoluteFile + File.separator + "runStatistics.txt")
+    output.write("cell\tstatistic\tvalue\n")
+
+    coordinateToCell.foreach{case(id,cell) => {
+      cell.stats.cellStats.foreach{st => {
+        st.name.zip(st.stat).foreach{case(name,stat) => {
+          output.write(cell.stats.name + "\t" + name + "\t" + stat + "\n")
+        }}
+      }}
+    }}
+    cellOfTheUnknown.stats.cellStats.foreach{st => {
+      st.name.zip(st.stat).foreach{case(name,stat) => {
+        output.write("Unknown\t" + name + "\t" + stat + "\n")
+      }}
+    }}
+    output.close()
   }
 }

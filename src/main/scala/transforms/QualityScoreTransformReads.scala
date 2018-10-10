@@ -47,7 +47,6 @@ object QualityScoreTransformReads {
     var sliceWindow = -1
     (0 until (toProb.size - windowSize)).foreach{ index => {
       val average = toProb.slice(index, index + windowSize).sum / windowSize.toDouble
-      println("ave: " + average + " at " + index + " for " + fastqRecord.getReadString)
       if (average <= minQual && sliceWindow < 0) {
         sliceWindow = index
       }
