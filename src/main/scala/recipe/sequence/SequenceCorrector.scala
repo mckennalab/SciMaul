@@ -13,7 +13,7 @@ class SequenceCorrector(resolvedDimension: ResolvedDimension) {
 
   // to make this lookup as fast as possible, we'll make a mapping of every possible
   // one-base change to a barcode
-  val sequenceMapping = new mutable.HashMap[FastBarcode,SequenceAndError]()
+  val sequenceMapping = new mutable.LinkedHashMap[FastBarcode,SequenceAndError]()
 
   resolvedDimension.sequences.foreach{case(seq) => {
     sequenceMapping(seq.fastBarcode) = SequenceAndError(seq,0)
@@ -30,7 +30,7 @@ class SequenceCorrector(resolvedDimension: ResolvedDimension) {
     * @param string the sequence
     * @return the corrected sequence and distance
     */
-  def correctSequence(string: String, maxDist: Int = 2): Option[SequenceAndError] = {
+  def correctSequence(string: String, maxDist: Int = 2, extensiveSearch: Boolean = false): Option[SequenceAndError] = {
     assert(string.size == resolvedDimension.length, "This barcode is of the wrong length: " + string + " (should be len " + resolvedDimension.length + ")")
 
     // our hashed barcode lookup
@@ -43,13 +43,17 @@ class SequenceCorrector(resolvedDimension: ResolvedDimension) {
     // find the closest hit
     var bestHitScore = Int.MaxValue
     var bestHit : Option[SequenceAndError] = None
-    resolvedDimension.sequences.foreach{case(sqs) => {
-      val mm = FastBarcode.mismatches(fb.barcode,sqs.fastBarcode,fb.mask) + fb.mismatches
-      if (mm <= maxDist && mm < bestHitScore) {
-        bestHit = Some(SequenceAndError(sqs,mm))
-        bestHitScore = mm
+
+    if (extensiveSearch) {
+      resolvedDimension.sequences.foreach { case (sqs) => {
+        val mm = FastBarcode.mismatches(fb.barcode, sqs.fastBarcode, fb.mask) + fb.mismatches
+        if (mm <= maxDist && mm < bestHitScore) {
+          bestHit = Some(SequenceAndError(sqs, mm))
+          bestHitScore = mm
+        }
       }
-    }}
+      }
+    }
     bestHit
   }
 }

@@ -1,15 +1,23 @@
 package main.scala
 
 import htsjdk.samtools.fastq.FastqRecord
+import output.OutputCell
 import transforms.{ReadPosition, TransforedReadAndDimension}
 import transforms.ReadPosition.ReadPosition
 
 import scala.collection.mutable
 
-case class ReadContainer(read1: Option[FastqRecord], read2: Option[FastqRecord], index1: Option[FastqRecord], index2: Option[FastqRecord]) {
+class ReadContainer(r1: Option[FastqRecord], r2: Option[FastqRecord], i1: Option[FastqRecord], i2: Option[FastqRecord]) {
+
+  var read1 = r1
+  var read2 = r2
+  var index1 = i1
+  var index2 = i2
 
   // a container to map additional metadata to the read set
-  val metaData = new mutable.HashMap[String,String]()
+  var metaData = new mutable.HashMap[String,String]()
+  val metaDataString = new mutable.StringBuilder()
+
 
   def readFromContainer(position: ReadPosition): Option[FastqRecord] = position match {
     case ReadPosition.Read1 => read1
@@ -20,16 +28,6 @@ case class ReadContainer(read1: Option[FastqRecord], read2: Option[FastqRecord],
 }
 
 object ReadContainer {
-  /**
-    * copy metadata over from one read container to another
-    * @param in the input read container with the annotations of interest
-    * @param out the output read container to add to
-    * @return the modified read container
-    */
-  def copyMetaData(in: ReadContainer, out: ReadContainer): ReadContainer = {
-    in.metaData.foreach{case(k,v) => out.metaData(k) = v}
-    out
-  }
 
   /**
     * extract a subsequence out of the specified read
@@ -77,16 +75,16 @@ object ReadContainer {
     }
 
     read.metaData(name) = "=" + toSlice._2 + "," + toSlice._3
+    read.metaDataString.append(name + OutputCell.keyValueSeparator + "=" + toSlice._2 + "," + toSlice._3)
 
-    val newRead = readDim match {
-      case ReadPosition.Read1 => ReadContainer(Some(toSlice._1),read.read2,read.index1,read.index2)
-      case ReadPosition.Read2 =>  ReadContainer(read.read1,Some(toSlice._1),read.index1,read.index2)
-      case ReadPosition.Index1 => ReadContainer(read.read1,read.read2,Some(toSlice._1),read.index2)
-      case ReadPosition.Index2 => ReadContainer(read.read1,read.read2,read.index1,Some(toSlice._1))
+    readDim match {
+      case ReadPosition.Read1 => read.read1 = Some(toSlice._1)
+      case ReadPosition.Read2 =>  read.read2 = Some(toSlice._1)
+      case ReadPosition.Index1 => read.index1 = Some(toSlice._1)
+      case ReadPosition.Index2 => read.index2 = Some(toSlice._1)
     }
 
-    ReadContainer.copyMetaData(read,newRead)
-    TransforedReadAndDimension(newRead,Some(toSlice._2))
+    TransforedReadAndDimension(read,Some(toSlice._2))
   }
 
 }

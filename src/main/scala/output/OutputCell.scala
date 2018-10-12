@@ -12,6 +12,7 @@ import java.util.zip._
 
 import com.typesafe.scalalogging.LazyLogging
 import htsjdk.samtools.fastq.FastqRecord
+import output.OutputCell.writeRecordToFastq
 import recipe.Coordinate
 import stats.CellStats
 import transforms.ReadPosition
@@ -31,25 +32,27 @@ class OutputCell(coordinates: Coordinate, path: File, bufferSize: Int, readType:
 
   // Our read buffer: to make things as fast as possible we'll allocate an array of the set size, and watch for overflow
   var currentIndex = 0
-  val readBuffer = new Array[ReadContainer](bufferSize)
+  var readBuffer = new Array[ReadContainer](bufferSize)
   var haveWritten = false
 
   // our statistics about the reads
   val stats = new CellStats(coordinates, readType)
 
   val readOutput = readType.map{ readType => {
-    (readType,new File(path + File.separator + OutputCell.cellName + OutputCell.suffixSeparator + ReadPosition.fileExtension(readType)))
-  }}.toMap
-
+    new File(path + File.separator + OutputCell.cellName + OutputCell.suffixSeparator + ReadPosition.fileExtension(readType))
+  }}
+  val types = readType
 
   def addRead(read: ReadContainer): Unit = {
     if (currentIndex >= bufferSize) {
-      // write the reads out to disk
-      readType.foreach{tp =>
-        OutputCell.writeReadToFastqFile(readOutput(tp), readBuffer, tp)
+      // write the reads out to disk -- again a while for speed in this inner loop
+      var index = 0
+      while(index < readOutput.size) {
+        DiskWriter.write(OutputReads(readOutput(index), readBuffer.slice(0,currentIndex), types(index)))
+        index += 1
       }
-
-      logger.info("Wrote " + currentIndex + " reads to cell " + path)
+      readBuffer = new Array[ReadContainer](bufferSize)
+      logger.debug("Wrote " + currentIndex + " reads to cell " + path)
       currentIndex = 0
     }
     readBuffer(currentIndex) = read
@@ -64,12 +67,13 @@ class OutputCell(coordinates: Coordinate, path: File, bufferSize: Int, readType:
     * a garbage cell (below the threshold) and shouldn't be output
     */
   def close(): Unit = {
-    logger.info("Current size = " + currentIndex)
-    if (/* haveWritten && */ currentIndex >= 0) {
-      // write the reads out to disk -- but just up to the index size
-      readType.foreach{tp => {
-        OutputCell.writeReadToFastqFile(readOutput(tp), readBuffer.slice(0,currentIndex), tp)
-      }}
+    logger.debug("Current size = " + currentIndex)
+    if (haveWritten && currentIndex >= 0) {
+      var index = 0
+      while(index < readOutput.size) {
+        DiskWriter.write(OutputReads(readOutput(index), readBuffer.slice(0,currentIndex), types(index)))
+        index += 1
+      }
       currentIndex = -1
     }
   }
@@ -103,14 +107,22 @@ object OutputCell extends LazyLogging {
   def writeReadToFastqFile(path: File, reads: Array[ReadContainer], read: ReadPosition): Unit = {
     logger.info("Writing to " + path)
     val output = gosAppend(path.getAbsolutePath)
-    reads.foreach { rd =>
-      read match {
-        case ReadPosition.Read1 => writeRecordToFastq(output,rd.read1.get,rd.metaData)
-        case ReadPosition.Read2 => writeRecordToFastq(output,rd.read2.get,rd.metaData)
-        case ReadPosition.Index1 => writeRecordToFastq(output,rd.index1.get,rd.metaData)
-        case ReadPosition.Index2 => writeRecordToFastq(output,rd.index2.get,rd.metaData)
-      }
+
+    val extractor : ReadContainer => FastqRecord = read match {
+      case ReadPosition.Read1 =>   (x: ReadContainer) => x.read1.get
+      case ReadPosition.Read2 =>   (x: ReadContainer) => x.read2.get
+      case ReadPosition.Index1 =>  (x: ReadContainer) => x.index1.get
+      case ReadPosition.Index2 =>  (x: ReadContainer) => x.index2.get
+  }
+
+    var index = 0
+    while (index < reads.size) {
+      val rd = reads(index)
+      val annotationString = rd.metaDataString.toString()
+      writeRecordToFastq(output,extractor(rd),annotationString)
+      index += 1
     }
+
     output.close()
 
   }
@@ -121,12 +133,17 @@ object OutputCell extends LazyLogging {
     * @param read the read
     * @param annotations any annotations that have to be put in the readname
     */
-  def writeRecordToFastq(output: PrintWriter, read: FastqRecord, annotations: mutable.HashMap[String,String]): Unit = {
+  def writeRecordToFastq(output: PrintWriter, read: FastqRecord, annotations: String): Unit = {
 
     // create the new read name
-    val readName = read.getReadHeader + annotations.map{case(k,v) => k + OutputCell.keyValueSeparator + v}
+    //val readName = read.getReadHeader + annotations.map{case(k,v) => k + OutputCell.keyValueSeparator + v}
+    //val annotationString = new mutable.StringBuilder()
+    //annotationString.append(read.getReadHeader)
+    //annotations.toArray.foreach{case(k,v) => annotationString.append(k + OutputCell.keyValueSeparator + v)}
 
-    output.write(readName + "\n")
+
+
+    output.write(read.getReadHeader + OutputCell.keyValueSeparator + annotations + "\n")
     output.write(read.getReadString + "\n")
     output.write(read.getBaseQualityHeader + "\n")
     output.write(read.getBaseQualityString + "\n")

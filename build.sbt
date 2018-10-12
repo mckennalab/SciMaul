@@ -24,6 +24,9 @@ libraryDependencies += "com.typesafe.scala-logging" % "scala-logging_2.12" % "3.
 
 libraryDependencies += "info.picocli" % "picocli" % "3.6.1"
 
+libraryDependencies += "com.typesafe.akka" %% "akka-actor" % "2.5.17"
+
+
 // set the main class for packaging the main jar
 // 'run' will still auto-detect and prompt
 // change Compile to Test to set it for the test jar

@@ -1,8 +1,8 @@
 package main.scala
 
-import java.io.{BufferedInputStream, File, PrintWriter}
-import java.util.logging.{Level, Logger}
+import java.io.File
 
+import com.typesafe.scalalogging.LazyLogging
 import input.SequenceGenerator
 import output.OutputManager
 import picocli.CommandLine
@@ -42,7 +42,7 @@ import scala.collection.mutable
   */
 @Command(name = "SCIMaul", version = Array("1.0"), sortOptions = false,
   description = Array("@|bold SCIMaul|@ @|underline Process single-cell sequencing reads into |@ single cells"))
-class Main extends Runnable {
+class Main extends Runnable with LazyLogging {
 
   @Option(names = Array("-fq1", "--fastq1"), required = true, paramLabel = "FILE", description = Array("the first read fastq file"))
   private var fastq1: File = new File("")
@@ -63,7 +63,7 @@ class Main extends Runnable {
   private var outputDir: File = new File("")
 
   @Option(names = Array("-buffer", "--buffer"), paramLabel = "FILE", description = Array("the number of reads we should buffer before outputing"))
-  private var bufferSize: Int = 100
+  private var bufferSize: Int = 1000
 
   @Option(names = Array("-h", "--help"), usageHelp = true, description = Array("print this help and exit"))
   private var helpRequested: Boolean = false
@@ -74,8 +74,6 @@ class Main extends Runnable {
   // *********************************************************************************
   // setup the logging
   System.setProperty("java.util.logging.SimpleFormatter.format", "[%1$tF %1$tT]:%4$s:(%2$s): %5$s%n")
-  val logger = Logger.getLogger("SCIMaul")
-  logger.setLevel(Level.INFO)
 
   override def run(): Unit = {
     if (helpRequested) {
@@ -108,7 +106,7 @@ class Main extends Runnable {
         val nextRead = reads.next()
         outputManager.addRead(nextRead)
         readsProcessed += 1
-        if (readsProcessed % 100000 == 0) logger.info("Processed " + readsProcessed + " reads so far")
+        if (readsProcessed % 10000 == 0) println("Processed " + readsProcessed + " reads so far")
       }
 
       // close everything up
@@ -116,6 +114,7 @@ class Main extends Runnable {
 
     }
   }
+
 }
 
 

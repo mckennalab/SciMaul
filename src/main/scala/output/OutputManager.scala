@@ -14,7 +14,7 @@ import scala.collection.mutable
 class OutputManager(recipeContainer: RecipeContainer, basePath: File, bufferSize: Int, readTypes: Array[ReadPosition]) extends LazyLogging {
 
   // setup a cell container, where we map a dimension onto a cell
-  val coordinateToCell = new mutable.HashMap[String,OutputCell]()
+  val coordinateToCell = new mutable.LinkedHashMap[String,OutputCell]()
   val cellOfTheUnknown = new OutputCell(new Coordinate(Array[ResolvedDimension](),Array[Sequence]()),
     basePath,
     10000, // a larger buffer, as we'll write to this cell often
@@ -22,13 +22,10 @@ class OutputManager(recipeContainer: RecipeContainer, basePath: File, bufferSize
     "unknownReads"
   )
 
-  val dimensionToCorrector = new mutable.LinkedHashMap[ResolvedDimension, SequenceCorrector]()
-  val dimensionToTransform = new mutable.LinkedHashMap[ResolvedDimension, ReadTransform]()
+  val dimensionToCorrectorAndTransform = recipeContainer.resolvedDimensions.map{dim => {
+    (dim, new SequenceCorrector(dim),TransformFactory.dimensionToTransform(dim))
+  }}.toArray
 
-  recipeContainer.resolvedDimensions.foreach{dim => {
-    dimensionToCorrector(dim) = new SequenceCorrector(dim)
-    dimensionToTransform(dim) = TransformFactory.dimensionToTransform(dim)
-  }}
 
   var unassignedReads = 0
 
@@ -44,15 +41,16 @@ class OutputManager(recipeContainer: RecipeContainer, basePath: File, bufferSize
     val coordinates = new mutable.ArrayBuffer[Sequence]()
     var readUnassigned = false
 
-    recipeContainer.resolvedDimensions.foreach{dim => {
-      if (dimensionToTransform(dim).isDimensioned) {
-        dimensions += dim
-        val transform = dimensionToTransform(dim)
+    var index = 0 // for speed, a while loop
+    while (index < dimensionToCorrectorAndTransform.size) {
 
-        val transformed = transform.transform(read)
+      if (dimensionToCorrectorAndTransform(index)._3.isDimensioned) {
+        dimensions += dimensionToCorrectorAndTransform(index)._1
+
+        val transformed = dimensionToCorrectorAndTransform(index)._3.transform(read)
 
         // correct the sequence to the known coordinate
-        val corrected = dimensionToCorrector(dim).correctSequence(transformed.sequence.get) // a bit unsafe, but if it's dimensioned we should always have a sequence
+        val corrected = dimensionToCorrectorAndTransform(index)._2.correctSequence(transformed.sequence.get) // a bit unsafe, but if it's dimensioned we should always have a sequence
 
         if (corrected.isDefined) {
           coordinates += corrected.get.sequence
@@ -61,12 +59,13 @@ class OutputManager(recipeContainer: RecipeContainer, basePath: File, bufferSize
         }
 
       } else {
-        dimensions += dim
-        val transform = dimensionToTransform(dim)
-        read = transform.transform(read).readContainer
+        dimensions += dimensionToCorrectorAndTransform(index)._1
+        read = dimensionToCorrectorAndTransform(index)._3.transform(read).readContainer
 
       }
-    }}
+
+      index += 1
+    }
 
     if (!readUnassigned) {
 

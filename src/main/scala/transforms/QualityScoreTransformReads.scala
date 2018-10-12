@@ -16,12 +16,12 @@ class QualityScoreTransformReads(dim: Array[ResolvedDimension], minQual: Int, wi
 
   override def transform(reads: ReadContainer): TransforedReadAndDimension = {
     // TransforedReadAndDimension()
-    val transformedRead1: Option[FastqRecord] = if (reads.read1.isDefined)
+    reads.read1 = if (reads.read1.isDefined)
       Some(QualityScoreTransformReads.removeLowQualityEnd(reads.read1.get,minQual,windowSize)) else None
-    val transformedRead2: Option[FastqRecord] = if (reads.read1.isDefined)
+    reads.read2 = if (reads.read1.isDefined)
       Some(QualityScoreTransformReads.removeLowQualityEnd(reads.read1.get,minQual,windowSize)) else None
 
-    TransforedReadAndDimension(ReadContainer(transformedRead1,transformedRead2,reads.index1,reads.index2),None)
+    TransforedReadAndDimension(reads,None)
   }
 
   override def dimension: Option[ResolvedDimension] = None
