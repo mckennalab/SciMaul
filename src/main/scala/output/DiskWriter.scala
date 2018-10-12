@@ -9,7 +9,7 @@ import transforms.ReadPosition.ReadPosition
 
 class DiskWriter extends Actor {
   override def receive: Receive = {
-    case e: OutputReads => OutputCell.writeReadToFastqFile(e.path,e.reads,e.read)
+    case e: OutputReads => BufferedOutputCell.writeReadToFastqFile(e.path,e.reads,e.read)
   }
 }
 
@@ -20,7 +20,7 @@ object DiskWriter {
 
   def write(out: OutputReads): Unit = {
     //helloActor ! out
-    OutputCell.writeReadToFastqFile(out.path,out.reads,out.read)
+    BufferedOutputCell.writeReadToFastqFile(out.path,out.reads,out.read)
   }
 }
 

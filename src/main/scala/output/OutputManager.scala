@@ -14,8 +14,8 @@ import scala.collection.mutable
 class OutputManager(recipeContainer: RecipeContainer, basePath: File, bufferSize: Int, readTypes: Array[ReadPosition]) extends LazyLogging {
 
   // setup a cell container, where we map a dimension onto a cell
-  val coordinateToCell = new mutable.LinkedHashMap[String,OutputCell]()
-  val cellOfTheUnknown = new OutputCell(new Coordinate(Array[ResolvedDimension](),Array[Sequence]()),
+  val coordinateToCell = new mutable.LinkedHashMap[String,BufferedOutputCell]()
+  val cellOfTheUnknown = new BufferedOutputCell(new Coordinate(Array[ResolvedDimension](),Array[Sequence]()),
     basePath,
     10000, // a larger buffer, as we'll write to this cell often
     readTypes,
@@ -78,12 +78,12 @@ class OutputManager(recipeContainer: RecipeContainer, basePath: File, bufferSize
         coordinateToCell(coordinateString).addRead(read)
       } else {
         val path = CellPathGenerator.outputPath(basePath, coordinate)
-        coordinateToCell(coordinateString) = new OutputCell(coordinate, path, bufferSize, readTypes)
+        coordinateToCell(coordinateString) = new BufferedOutputCell(coordinate, path, bufferSize, readTypes)
         coordinateToCell(coordinateString).addRead(read)
       }
     } else {
       unassignedReads += 1
-      if (unassignedReads % 10000 == 0) logger.info("failed to assign " + unassignedReads + " reads so far")
+      if (unassignedReads % 100000 == 0) logger.info("failed to assign " + unassignedReads + " reads so far")
       cellOfTheUnknown.addRead(read)
     }
 

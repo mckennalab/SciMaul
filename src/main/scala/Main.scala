@@ -106,7 +106,7 @@ class Main extends Runnable with LazyLogging {
         val nextRead = reads.next()
         outputManager.addRead(nextRead)
         readsProcessed += 1
-        if (readsProcessed % 10000 == 0) println("Processed " + readsProcessed + " reads so far")
+        if (readsProcessed % 100000 == 0) println("Processed " + readsProcessed + " reads so far")
       }
 
       // close everything up

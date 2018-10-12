@@ -20,9 +20,9 @@ object ReadPosition extends Enumeration {
   }
 
   def fileExtension(readPosition: ReadPosition): String = readPosition match {
-    case Read1 => "read1.fq.gz"
-    case Read2 => "read2.fq.gz"
-    case Index1 => "index1.fq.gz"
-    case Index2 => "index2.fq.gz"
+    case Read1 => "read1.fq"
+    case Read2 => "read2.fq"
+    case Index1 => "index1.fq"
+    case Index2 => "index2.fq"
   }
 }

@@ -11,7 +11,8 @@ case class ResolvedDimension(name: String,
                              start: Int,
                              length: Int,
                              typeOf: SequenceType,
-                             sequences: Array[Sequence]) extends Ordered[ResolvedDimension] {
+                             sequences: Array[Sequence],
+                             maxError: Int) extends Ordered[ResolvedDimension] {
 
   /**
     * we need the dimensions to be sorted, so that we always apply transforms within a read from right
@@ -34,7 +35,8 @@ object ResolvedDimension {
       barcode.start,
       barcode.length,
       SequenceType.fromString(barcode.use),
-      sequences)
+      sequences,
+      barcode.maxerror)
   }
 }
 
