@@ -22,7 +22,7 @@ case class ResolvedDimension(name: String,
     */
   override def compare(that: ResolvedDimension): Int = {
     if (that.read == this.read)
-      return this.start - that.start
+      return that.start - this.start
     this.read.compare(that.read)
   }
 }

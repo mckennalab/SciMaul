@@ -34,7 +34,7 @@ class OutputManager(recipeContainer: RecipeContainer, basePath: File, bufferSize
       foundReadsCountsPerDimension(dim._1) = 0
   }}
 
-  // for unknown reads, in the end we want to print out the most common unassigned sequences we saw
+  // for unassigned reads, in the end we want to print out the most common unassigned sequences we saw
   val confusingBarcodes = recipeContainer.resolvedDimensions.map{dim => {
     (dim, new mutable.LinkedHashMap[String,Int]())
   }}.toArray
@@ -129,8 +129,8 @@ class OutputManager(recipeContainer: RecipeContainer, basePath: File, bufferSize
 
     // output the top barcode
     confusingBarcodes.foreach{case(dim,seqMap) => {
-      val sortedEntries = mutable.ListMap(seqMap.toSeq.filter{case(k,v) => v > 1000}.sortWith(_._2 > _._2):_*)
-      sortedEntries.take(20).foreach{case(seq,count) => {
+      val sortedEntries = mutable.LinkedHashMap(seqMap.toSeq.filter{case(k,v) => v > 5000}.sortWith(_._2 > _._2):_*)
+      sortedEntries.foreach{case(seq,count) => {
         output.write("UnknownIndex\t" + seq + "\t" + dim.read + "\t" + count + "\n")
       }}
     }}
