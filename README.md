@@ -1,6 +1,8 @@
 # SciMaul, a high-dimensional barcode splitter for single-cell sequencing experiments
 
-<div style="text-align:center"><img src ="https://github.com/aaronmck/SciMaul/raw/master/images/sci_maul.png" /></div>
+<p align="center">
+    <img src ="https://github.com/aaronmck/SciMaul/raw/master/images/sci_maul.png" />
+</p>
 
 SciMaul splits transforms input reads into cells, splitting on any number of barcodes located anywhere within the reads. SciMaul handles complex configurations that include indices, UMI sequences, and static barcodes, producing a heirarchical directory structure based on these 'dimensions'. The goal is to have one tool that can split SCI experiments, 10X single-cell RNA-Seq, and droplet experiments within a single framework, all the while providing some simple statistics and data cleanup. SCIMaul's name comes from adding SCI to it's predecessor [Maul](https://github.com/aaronmck/Maul), my previous barcode splitter. SCIMaul isn't rocket-science, but I really wanted one common tool I could use to pre-process all single-cell data, and one input format that I could use to describe the layout of any sequencing run. 
 
