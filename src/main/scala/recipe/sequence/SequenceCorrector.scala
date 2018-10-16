@@ -54,7 +54,7 @@ class SequenceCorrector(resolvedDimension: ResolvedDimension) extends LazyLoggin
   }
 
   logger.info("For dimension " + resolvedDimension.name + " we generated " + sequenceMapping.size + " sequences with an allowed error count of " + resolvedDimension.maxError)
-  logger.info("For dimension " + resolvedDimension.name + " we had " + collisions + " collisions")
+  logger.info("For dimension " + resolvedDimension.name + " we had " + collisions + " collisions when making potential error-mismatched sequences")
   val conversionMemory = new mutable.HashMap[String, BarcodeTrio]()
 
   /**

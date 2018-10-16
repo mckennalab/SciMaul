@@ -27,6 +27,12 @@ class OutputManager(recipeContainer: RecipeContainer, basePath: File, bufferSize
   }}.toArray
 
 
+  val foundReadsCountsPerDimension = new mutable.LinkedHashMap[ResolvedDimension,Int]()
+  dimensionToCorrectorAndTransform.map{ dim => {
+    if (dim._3.isDimensioned)
+      foundReadsCountsPerDimension(dim._1) = 0
+  }}
+
   var unassignedReads = 0
 
   /**
@@ -53,6 +59,7 @@ class OutputManager(recipeContainer: RecipeContainer, basePath: File, bufferSize
         val corrected = dimensionToCorrectorAndTransform(index)._2.correctSequence(transformed.sequence.get) // a bit unsafe, but if it's dimensioned we should always have a sequence
 
         if (corrected.isDefined) {
+          foundReadsCountsPerDimension(dimensionToCorrectorAndTransform(index)._1) += 1
           coordinates += corrected.get.sequence
         } else {
           readUnassigned = true
@@ -83,7 +90,6 @@ class OutputManager(recipeContainer: RecipeContainer, basePath: File, bufferSize
       }
     } else {
       unassignedReads += 1
-      if (unassignedReads % 100000 == 0) logger.info("failed to assign " + unassignedReads + " reads so far")
       cellOfTheUnknown.addRead(read)
     }
 
