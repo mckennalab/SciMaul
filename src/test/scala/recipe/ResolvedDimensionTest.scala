@@ -1,0 +1,5 @@
+package recipe
+
+class ResolvedDimensionTest {
+
+}
