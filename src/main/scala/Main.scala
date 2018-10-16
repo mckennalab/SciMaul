@@ -110,7 +110,8 @@ class Main extends Runnable with LazyLogging {
         if (readsProcessed % 100000 == 0) {
           val dimensionMatchString = outputManager.foundReadsCountsPerDimension.map{case(dim,count) => dim.name + " = " + Main.quickRound(count,readsProcessed) + "%"}.mkString(", ")
           val unmatchedPCT = Main.quickRound(outputManager.unassignedReads ,readsProcessed)
-          logger.info("Processed " + readsProcessed + " reads so far; " + (readsProcessed - outputManager.unassignedReads) + " reads were assigned (" + (100.0 - unmatchedPCT) + "%), per dimension: " + dimensionMatchString)
+          logger.info("Processed " + readsProcessed + " reads so far; " + (readsProcessed - outputManager.unassignedReads) +
+            " reads were assigned (" + (100.0 - unmatchedPCT) + "%), read assignment rate per dimension: " + dimensionMatchString)
         }
       }
 

@@ -27,11 +27,17 @@ class OutputManager(recipeContainer: RecipeContainer, basePath: File, bufferSize
   }}.toArray
 
 
+  // we want to know what dimension is failing to match up to our lists: here we setup recording the assigned reads per dimension
   val foundReadsCountsPerDimension = new mutable.LinkedHashMap[ResolvedDimension,Int]()
   dimensionToCorrectorAndTransform.map{ dim => {
     if (dim._3.isDimensioned)
       foundReadsCountsPerDimension(dim._1) = 0
   }}
+
+  // for unknown reads, in the end we want to print out the most common unassigned sequences we saw
+  val confusingBarcodes = recipeContainer.resolvedDimensions.map{dim => {
+    (dim, new mutable.LinkedHashMap[String,Int]())
+  }}.toArray
 
   var unassignedReads = 0
 
@@ -56,12 +62,14 @@ class OutputManager(recipeContainer: RecipeContainer, basePath: File, bufferSize
         val transformed = dimensionToCorrectorAndTransform(index)._3.transform(read)
 
         // correct the sequence to the known coordinate
-        val corrected = dimensionToCorrectorAndTransform(index)._2.correctSequence(transformed.sequence.get) // a bit unsafe, but if it's dimensioned we should always have a sequence
+        val seqOfInterest = transformed.sequence.get
+        val corrected = dimensionToCorrectorAndTransform(index)._2.correctSequence(seqOfInterest) // a bit unsafe, but if it's dimensioned we should always have a sequence
 
         if (corrected.isDefined) {
           foundReadsCountsPerDimension(dimensionToCorrectorAndTransform(index)._1) += 1
           coordinates += corrected.get.sequence
         } else {
+          confusingBarcodes(index)._2(seqOfInterest) = confusingBarcodes(index)._2.getOrElse(seqOfInterest,0) + 1
           readUnassigned = true
         }
 
@@ -104,12 +112,12 @@ class OutputManager(recipeContainer: RecipeContainer, basePath: File, bufferSize
     logger.info("Generating master statistics file")
 
     val output = new PrintWriter(basePath.getAbsoluteFile + File.separator + "runStatistics.txt")
-    output.write("cell\tstatistic\tvalue\n")
+    output.write("cell\tstatistic\tread\tvalue\n")
 
     coordinateToCell.foreach{case(id,cell) => {
       cell.stats.cellStats.foreach{st => {
         st.name.zip(st.stat).foreach{case(name,stat) => {
-          output.write(cell.stats.name + "\t" + name + "\t" + stat + "\n")
+          output.write(cell.stats.name + "\t" + name + "\t" + st.read + "\t" + stat + "\n")
         }}
       }}
     }}
@@ -118,6 +126,15 @@ class OutputManager(recipeContainer: RecipeContainer, basePath: File, bufferSize
         output.write("Unknown\t" + name + "\t" + stat + "\n")
       }}
     }}
+
+    // output the top barcode
+    confusingBarcodes.foreach{case(dim,seqMap) => {
+      val sortedEntries = mutable.ListMap(seqMap.toSeq.filter{case(k,v) => v > 1000}.sortWith(_._2 > _._2):_*)
+      sortedEntries.take(20).foreach{case(seq,count) => {
+        output.write("UnknownIndex\t" + seq + "\t" + dim.read + "\t" + count + "\n")
+      }}
+    }}
+
     output.close()
   }
 }

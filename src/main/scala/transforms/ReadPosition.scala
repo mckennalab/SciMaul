@@ -10,12 +10,14 @@ object ReadPosition extends Enumeration {
   val Read2 = Value("read2")
   val Index1 = Value("index1")
   val Index2 = Value("index2")
+  val All = Value("all")
 
   def fromString(str: String): ReadPosition = str.toUpperCase match {
     case "READ1" => Read1
     case "READ2" => Read2
     case "INDEX1" => Index1
     case "INDEX2" => Index2
+    case "ALL" => All
     case _ => throw new IllegalStateException("Cant parse ReadPosition from: " + str)
   }
 
@@ -24,5 +26,6 @@ object ReadPosition extends Enumeration {
     case Read2 => "read2.fq"
     case Index1 => "index1.fq"
     case Index2 => "index2.fq"
+    case All => "all.fq"
   }
 }

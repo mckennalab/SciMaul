@@ -1,0 +1,44 @@
+{
+    "name": "GESTALT-RNA-Seq",
+  "barcodes": [
+    {
+      "name": "row",
+      "read": "INDEX1",
+      "start": 0,
+      "length": 10,
+      "use": "INDEX",
+      "sequences": "sci_2_level/SCI_P7.txt"
+    },
+    {
+      "name": "column",
+      "read": "INDEX2",
+      "start": 0,
+      "length": 10,
+      "use": "INDEX",
+      "sequences": "sci_2_level/SCI_P5.txt"
+    },
+    {
+      "name": "cell",
+      "read": "READ1",
+      "start": 8,
+      "length": 10,
+      "use": "INDEX",
+      "sequences": "sci_2_level/SCI_RT.txt",
+      "maxerror": 1
+    },
+    {
+      "name": "umi",
+      "read": "READ1",
+      "start": 0,
+      "length": 8,
+      "use": "UMI"
+    },
+    {
+      "name": "static",
+      "read": "READ1",
+      "start": 58,
+      "length": 10,
+      "use": "STATIC"
+    }
+  ]
+}

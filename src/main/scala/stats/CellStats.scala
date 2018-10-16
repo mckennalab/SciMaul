@@ -25,6 +25,7 @@ class CellStats(coordinates: Coordinate, readsCovered: Array[ReadPosition]) {
 
 trait CellStat {
   def addRead(read: ReadContainer)
+  def read: ReadPosition
   def name: Array[String]
   def stat: Array[String]
 }
@@ -37,6 +38,8 @@ class ReadCount extends CellStat {
   override def name = Array[String]("readCount")
 
   override def stat= Array[String](readCount.toString)
+
+  override def read: ReadPosition = ReadPosition.All
 }
 
 class ReadLength(reads: Array[ReadPosition]) extends CellStat {
@@ -57,6 +60,8 @@ class ReadLength(reads: Array[ReadPosition]) extends CellStat {
   override def name = totalLen.keys.toArray.map{c => "averageLength" + c.toString}
 
   override def stat = totalLen.map{case(c,v) => (v.toDouble / readCount).toString}.toArray
+
+  override def read: ReadPosition = ReadPosition.All
 }
 
 
@@ -80,4 +85,6 @@ class AverageQual(reads: Array[ReadPosition]) extends CellStat {
   override def name = totalQual.keys.toArray.map{c => "averageQuality" + c.toString}
 
   override def stat = totalQual.map{case(c,v) => (v.toDouble / baseCount(c).toDouble).toString}.toArray
+
+  override def read: ReadPosition = ReadPosition.All
 }

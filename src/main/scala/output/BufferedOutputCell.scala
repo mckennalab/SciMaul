@@ -13,10 +13,11 @@ import java.util.zip._
 import com.typesafe.scalalogging.LazyLogging
 import htsjdk.samtools.fastq.FastqRecord
 import output.BufferedOutputCell.writeRecordToFastq
-import recipe.Coordinate
+import recipe.{Coordinate, ResolvedDimension}
 import stats.CellStats
 import transforms.ReadPosition
 import org.apache.commons.io.FileUtils
+
 import scala.collection.mutable
 
 
