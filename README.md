@@ -1,4 +1,4 @@
-# SciMaul, a high-dimensional barcode splitter for single-cell sequencing experiments
+## SciMaul, a high-dimensional barcode splitter for single-cell sequencing experiments
 
 <p align="center">
     <img src ="https://github.com/aaronmck/SciMaul/raw/master/images/sci_maul.png" />
@@ -6,7 +6,7 @@
 
 SciMaul splits transforms input reads into cells, splitting on any number of barcodes located anywhere within the reads. SciMaul handles complex configurations that include indices, UMI sequences, and static barcodes, producing a heirarchical directory structure based on these 'dimensions'. The goal is to have one tool that can split SCI experiments, 10X single-cell RNA-Seq, and droplet experiments within a single framework, all the while providing some simple statistics and data cleanup. SCIMaul's name comes from adding SCI to it's predecessor [Maul](https://github.com/aaronmck/Maul), my previous barcode splitter. SCIMaul isn't rocket-science, but I really wanted one common tool I could use to pre-process all single-cell data, and one input format that I could use to describe the layout of any sequencing run. 
 
-# Building
+## Building
 The SCIMaul releases contain a jar file, so you shouldn't have to build SCIMaul unless you want to. To build the tool you'll need to have at least Java 1.8 and SBT installed. Once you do, just type:
 
 sbt compile
@@ -17,9 +17,9 @@ sbt assembly
 
 to make a single jar version with all of the dependencies built in.
 
-# Running
+## Running
 
-# Recipe format
+## Recipe format
 
 SCIMaul splits reads based on a recipe file; check out the _recipe_files_ directory for an example recipe file. This recipe file is a simple JSON file that describes the layout of sequencing run.  The easiest way is to walk through a somewhat complex example file:
 
@@ -70,6 +70,4 @@ SCIMaul splits reads based on a recipe file; check out the _recipe_files_ direct
 }
 ```
 
-
-# Name
 
