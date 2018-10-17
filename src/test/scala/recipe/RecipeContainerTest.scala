@@ -7,7 +7,7 @@ import org.scalatest.{FlatSpec, Matchers}
 
 class RecipeContainerTest extends FlatSpec with Matchers {
   "RecipeReader" should "load up an example recipe" in {
-    val recipe = new RecipeContainer("test_data/sci_GESTALT_v83.json")
+    val recipe = new RecipeContainer("test_data/test.json")
 
     ((recipe.recipe.name) should be ("SCI-RNA-Seq"))
     ((recipe.recipe.barcodes.size) should be (5))
@@ -18,7 +18,7 @@ class RecipeContainerTest extends FlatSpec with Matchers {
     ((recipe.recipe.barcodes(0).start) should be (0))
     ((recipe.recipe.barcodes(0).length) should be (10))
     ((recipe.recipe.barcodes(0).use) should be ("INDEX"))
-    ((recipe.recipe.barcodes(0).sequences.get) should be ("sci_2_level/SCI_P5.txt"))
+    ((recipe.recipe.barcodes(0).sequences.get) should be ("test_2level/SCI_P5.txt"))
     ((recipe.recipe.barcodes(0).align) should be (false))
 
     ((recipe.recipe.barcodes(4).name) should be ("static"))

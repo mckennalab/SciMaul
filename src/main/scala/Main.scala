@@ -64,7 +64,7 @@ class Main extends Runnable with LazyLogging {
   @Option(names = Array("-out", "--outputDir"), required = true, paramLabel = "FILE", description = Array("the output directory"))
   private var outputDir: File = new File("")
 
-  @Option(names = Array("-buffer", "--buffer"), paramLabel = "FILE", description = Array("the number of reads we should buffer before outputing"))
+  @Option(names = Array("-buffer", "--buffer"), paramLabel = "FILE", description = Array("the number of reads we should buffer before writing to the output"))
   private var bufferSize: Int = 1000
 
   @Option(names = Array("-h", "--help"), usageHelp = true, description = Array("print this help and exit"))
