@@ -2,17 +2,18 @@ package output
 
 import java.io.{File, PrintWriter}
 
-import akka.actor.{Actor, ActorSystem, Props}
 import htsjdk.samtools.fastq.FastqRecord
 import main.scala.ReadContainer
 import transforms.ReadPosition.ReadPosition
+/*
 
+commented out for now
 class DiskWriter extends Actor {
   override def receive: Receive = {
     case e: OutputReads => BufferedOutputCell.writeReadToFastqFile(e.path,e.reads,e.read)
   }
 }
-
+*/
 object DiskWriter {
   //val system = ActorSystem("DiskWriterSystem")
 

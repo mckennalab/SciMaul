@@ -12,7 +12,8 @@ case class ResolvedDimension(name: String,
                              length: Int,
                              typeOf: SequenceType,
                              sequences: Array[Sequence],
-                             maxError: Int) extends Ordered[ResolvedDimension] {
+                             maxError: Int,
+                             allowAlignmentCorrection: Boolean) extends Ordered[ResolvedDimension] {
 
   /**
     * we need the dimensions to be sorted, so that we always apply transforms within a read from right
@@ -29,6 +30,12 @@ case class ResolvedDimension(name: String,
 
 object ResolvedDimension {
 
+  /**
+    * generate a ResolvedDimension object from a Dimension object
+    * @param barcode the barcode object, read in from a Recipe file
+    * @param sequences the sequences that go with that Barcode
+    * @return a ResolvedDimension representation of this barcode and sequences
+    */
   def apply(barcode: Dimension, sequences: Array[Sequence]): ResolvedDimension = {
     ResolvedDimension(barcode.name,
       ReadPosition.fromString(barcode.read),
@@ -36,7 +43,8 @@ object ResolvedDimension {
       barcode.length,
       SequenceType.fromString(barcode.use),
       sequences,
-      barcode.maxerror)
+      barcode.maxerror,
+      barcode.align)
   }
 }
 

@@ -20,8 +20,8 @@ class CellPathGeneratorTest extends FlatSpec with Matchers {
 
     val base = "test_data/test_base/"
     val baseDir = new File(base)
-    val fakeDim1 = ResolvedDimension("name1",ReadPosition.Read1, 0, 10, SequenceType.Index, Array[Sequence](), 1)
-    val fakeDim2 = ResolvedDimension("name2",ReadPosition.Read1, 0, 10, SequenceType.Index, Array[Sequence](), 1)
+    val fakeDim1 = ResolvedDimension("name1",ReadPosition.Read1, 0, 10, SequenceType.Index, Array[Sequence](), 1, true)
+    val fakeDim2 = ResolvedDimension("name2",ReadPosition.Read1, 0, 10, SequenceType.Index, Array[Sequence](), 1, true)
     val dims = Array[ResolvedDimension](fakeDim1,fakeDim2)
 
     val seq1 = Sequence("A1","AAAAAAAAAA",BitEncoding.bitEncodeString("AAAAAAAAAA"))

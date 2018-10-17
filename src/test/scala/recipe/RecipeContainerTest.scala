@@ -19,6 +19,7 @@ class RecipeContainerTest extends FlatSpec with Matchers {
     ((recipe.recipe.barcodes(0).length) should be (10))
     ((recipe.recipe.barcodes(0).use) should be ("INDEX"))
     ((recipe.recipe.barcodes(0).sequences.get) should be ("sci_2_level/SCI_P5.txt"))
+    ((recipe.recipe.barcodes(0).align) should be (false))
 
     ((recipe.recipe.barcodes(4).name) should be ("static"))
     ((recipe.recipe.barcodes(4).read) should be ("READ1"))

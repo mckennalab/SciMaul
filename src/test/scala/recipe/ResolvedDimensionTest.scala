@@ -11,8 +11,8 @@ class ResolvedDimensionTest extends FlatSpec with Matchers {
 
     var arrayOfDimensions = Array[ResolvedDimension]()
 
-    val dim1 = ResolvedDimension("dim1", ReadPosition.Index1, 0, 10, SequenceType.Index, Array[Sequence](), 1)
-    val dim2 = ResolvedDimension("dim2", ReadPosition.Index1, 10, 10, SequenceType.Index, Array[Sequence](), 1)
+    val dim1 = ResolvedDimension("dim1", ReadPosition.Index1, 0, 10, SequenceType.Index, Array[Sequence](), 1, true)
+    val dim2 = ResolvedDimension("dim2", ReadPosition.Index1, 10, 10, SequenceType.Index, Array[Sequence](), 1, true)
 
     arrayOfDimensions :+= dim1
     arrayOfDimensions :+= dim2
@@ -29,8 +29,8 @@ class ResolvedDimensionTest extends FlatSpec with Matchers {
 
     // now they're on different reads, and 'Read1' is higher in the enumerated order, so the sorted array should be the
     // same as the unsorted version
-    val dim1 = ResolvedDimension("dim1", ReadPosition.Read1, 0, 10, SequenceType.Index, Array[Sequence](), 1)
-    val dim2 = ResolvedDimension("dim2", ReadPosition.Index1, 10, 10, SequenceType.Index, Array[Sequence](), 1)
+    val dim1 = ResolvedDimension("dim1", ReadPosition.Read1, 0, 10, SequenceType.Index, Array[Sequence](), 1, true)
+    val dim2 = ResolvedDimension("dim2", ReadPosition.Index1, 10, 10, SequenceType.Index, Array[Sequence](), 1, true)
 
     arrayOfDimensions :+= dim1
     arrayOfDimensions :+= dim2
