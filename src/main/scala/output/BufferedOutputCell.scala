@@ -12,7 +12,6 @@ import java.util.zip._
 
 import com.typesafe.scalalogging.LazyLogging
 import htsjdk.samtools.fastq.FastqRecord
-import output.BufferedOutputCell.writeRecordToFastq
 import recipe.{Coordinate, ResolvedDimension}
 import stats.CellStats
 import transforms.ReadPosition
@@ -40,7 +39,9 @@ class BufferedOutputCell(coordinates: Coordinate, path: File, bufferSize: Int, r
   val stats = new CellStats(coordinates, readType)
 
   val readOutput = readType.map{ readType => {
-    new File(path + File.separator + BufferedOutputCell.cellName + BufferedOutputCell.suffixSeparator + ReadPosition.fileExtension(readType))
+    val outputFile = new File(path + File.separator + BufferedOutputCell.cellName + BufferedOutputCell.suffixSeparator + ReadPosition.fileExtension(readType))
+    assert(!outputFile.exists(), "We wont overwrite old data; please remove the existing data file: " + outputFile.getAbsolutePath + " (and probably others)")
+    outputFile
   }}
   val types = readType
 
@@ -94,7 +95,7 @@ object BufferedOutputCell extends LazyLogging {
 
   // the separator
   val nameSeparator = "."
-  val keyValueSeparator = "->"
+  val keyValueSeparator = "="
   val suffixSeparator = "."
   val cellName = "cell"
 
@@ -141,27 +142,5 @@ object BufferedOutputCell extends LazyLogging {
     stringBuilder.append(fastq.getBaseQualityString)
     stringBuilder.append("\n")
     stringBuilder.toString()
-  }
-
-  /**
-    * write a read out to disk
-    * @param output the output to write to
-    * @param read the read
-    * @param annotations any annotations that have to be put in the readname
-    */
-  def writeRecordToFastq(output: PrintWriter, read: FastqRecord, annotations: String): Unit = {
-
-    // create the new read name
-    //val readName = read.getReadHeader + annotations.map{case(k,v) => k + OutputCell.keyValueSeparator + v}
-    //val annotationString = new mutable.StringBuilder()
-    //annotationString.append(read.getReadHeader)
-    //annotations.toArray.foreach{case(k,v) => annotationString.append(k + OutputCell.keyValueSeparator + v)}
-
-
-
-    output.write(read.getReadHeader + BufferedOutputCell.keyValueSeparator + annotations + "\n")
-    output.write(read.getReadString + "\n")
-    output.write(read.getBaseQualityHeader + "\n")
-    output.write(read.getBaseQualityString + "\n")
   }
 }

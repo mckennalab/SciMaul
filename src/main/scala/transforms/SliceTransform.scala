@@ -6,7 +6,7 @@ import recipe.ResolvedDimension
 class SliceTransform(dim: ResolvedDimension) extends ReadTransform {
   val mDim = dim
 
-  override def name: String = "SL." + dim.name + dim.read + "." + dim.start + "." + dim.length
+  override def name: String = "{SL." + dim.name + dim.read + "." + dim.start + "." + dim.length + "}"
 
   override def description: String = "SL." + dim.name + dim.read + "." + dim.start + "." + dim.length
 
