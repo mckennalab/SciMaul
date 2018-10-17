@@ -1,0 +1,44 @@
+{
+  "name": "SCI-RNA-Seq",
+  "barcodes": [
+    {
+      "name": "row",
+      "read": "INDEX1",
+      "start": 0,
+      "length": 10,
+      "use": "INDEX",
+      "sequences": "test_2level/SCI_P5.txt",
+      "align": false
+    },
+    {
+      "name": "column",
+      "read": "INDEX2",
+      "start": 0,
+      "length": 10,
+      "use": "INDEX",
+      "sequences": "test_2level/SCI_P7.txt"
+    },
+    {
+      "name": "cell",
+      "read": "READ2",
+      "start": 0,
+      "length": 10,
+      "use": "INDEX",
+      "sequences": "test_2level/SCI_RT.txt"
+    },
+    {
+      "name": "umi",
+      "read": "READ1",
+      "start": 10,
+      "length": 8,
+      "use": "UMI"
+    },
+    {
+      "name": "static",
+      "read": "READ1",
+      "start": 58,
+      "length": 10,
+      "use": "static"
+    }
+  ]
+}
