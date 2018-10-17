@@ -70,7 +70,8 @@ SCIMaul splits reads based on a recipe file; check out the _recipe_files_ direct
       "start": 0,
       "length": 10,
       "use": "INDEX",
-      "sequences": "sci_2_level/SCI_P7.txt"
+      "sequences": "sci_2_level/SCI_P7.txt",
+      "align": true
     },
     {
       "name": "column",
@@ -107,10 +108,15 @@ SCIMaul splits reads based on a recipe file; check out the _recipe_files_ direct
 }
 ```
 
-Each json recipe file must have a name, and a set of barcodes (the top few lines). This describes the name of the experiment and the layout of important sequences over the reads. Each barcode within the json barcode array must have the following fields:
+Each json recipe file must have a name and a set of barcodes (the top few lines). This describes the name of the experiment and the layout of important sequences over the reads. Each barcode within the json barcode array must have the following fields:
 - name: this can be anything, but it's useful to describe the barcode / index in a way that'll you'll remember
 - read: which sequencing read to use when looking for this index. options are READ1, READ2, INDEX1, or INDEX2
 - start: where this sequence starts within the read of interest
 - length: how long this barcode is
-- use: what kind of index/barcode this is. _INDEX_ indicates this barcode has a known set of set of sequences that we should compare against, and sort based on that lookup. When use is set to _INDEX_ there should be another json field _sequences_ that points to the corresponding tab-separated list of sequence names and bases to use in the lookup. The field _maxerror_ can be used to set the maximum number of mismatches that are tolerated against this list. Two other options are available, _UMI_ and _STATIC_. Both don't require a known list, and instead will be added to the read header on output. The difference between the two are that _UMI_ sequences will be extracted and removed from the read sequence, whereas _STATIC_ will be left within the read.
+- use: what kind of index/barcode this is. _INDEX_ indicates this barcode has a known set of set of sequences that we should compare against, and sort based on that lookup. When use is set to _INDEX_ there should be another json field _sequences_ that points to the corresponding tab-separated list of sequence names and bases to use in the lookup (see _sequences_ below). The field _maxerror_ can be used to set the maximum number of mismatches that are tolerated against this list. Two other options are available, _UMI_ and _STATIC_. Both don't require a known list, and instead will be added to the read header on output. The difference between the two are that _UMI_ sequences will be extracted and removed from the read sequence, whereas _STATIC_ will be left within the read.
+
+Optional json barcode fields are:
+- sequences: a file with either an absolute path, or a relative path from the recipe json file, that contains a tab seperated list of names and sequences we should look for. This is valid for _INDEX_ use types above.
+- maxerror: the number of errors allowed when comparing sequences to the known list. The default is 1
+- align: should we try to align the observed sequences to the list of known sequences. This will recover barcodes with small indels, at a non-trivial cost in runtime. It's worth trying a sample both ways to see how much of an issue this is in your data
 
