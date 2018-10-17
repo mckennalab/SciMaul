@@ -70,7 +70,8 @@ SCIMaul splits reads based on a recipe file; check out the _recipe_files_ direct
       "start": 0,
       "length": 10,
       "use": "INDEX",
-      "sequences": "sci_2_level/SCI_P7.txt"
+      "sequences": "sci_2_level/SCI_P7.txt",
+      "align": true
     },
     {
       "name": "column",
