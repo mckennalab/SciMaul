@@ -49,8 +49,7 @@ object RecipeContainer {
     Source.fromFile(file).getLines().map { line =>
       Sequence(
         line.split("\t")(0),
-        line.split("\t")(1),
-        BitEncoding.bitEncodeString(line.split("\t")(1)))
+        line.split("\t")(1))
     }.toArray
   }
 }

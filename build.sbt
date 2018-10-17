@@ -22,10 +22,6 @@ libraryDependencies += "info.picocli" % "picocli" % "3.6.1"
 
 libraryDependencies += "commons-io" % "commons-io" % "2.6"
 
-libraryDependencies += "org.scalanlp" %% "breeze" % "0.13.2"
-
-libraryDependencies += "org.scalanlp" %% "breeze-natives" % "0.13.2"
-
 // set the main class for packaging the main jar
 
 mainClass in (Compile, packageBin) := Some("main.scala.Main")

@@ -4,12 +4,14 @@ import java.io.File
 
 import com.typesafe.scalalogging.LazyLogging
 import input.SequenceGenerator
+import org.slf4j.LoggerFactory
 import output.OutputManager
 import picocli.CommandLine
 import recipe.RecipeContainer
 import transforms.ReadPosition
 import transforms.ReadPosition.ReadPosition
 import picocli.CommandLine._
+import ch.qos.logback.classic.{Level,Logger}
 
 import scala.collection.mutable
 
@@ -71,6 +73,9 @@ class Main extends Runnable with LazyLogging {
   @Option(names = Array("-V", "--version"), versionHelp = true, description = Array("print version info and exit"))
   private var versionRequested: Boolean = false
 
+  @Option(names = Array("-v", "--verbose"), description = Array("output additional processing information"))
+  private var verbose: Boolean = false
+
   // *********************************************************************************
   // setup the logging
   System.setProperty("java.util.logging.SimpleFormatter.format", "[%1$tF %1$tT]:%4$s:(%2$s): %5$s%n")
@@ -81,6 +86,11 @@ class Main extends Runnable with LazyLogging {
     } else if (versionRequested) {
       new CommandLine(this).printVersionHelp(System.err)
     } else {
+      // setup the logging level
+      if (verbose)
+        LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME).asInstanceOf[Logger].setLevel(Level.DEBUG)
+      else
+        LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME).asInstanceOf[Logger].setLevel(Level.INFO)
 
       // *********************************************************************************
       // setup the inputs, mapping the read type to the input file if it exists
@@ -111,7 +121,7 @@ class Main extends Runnable with LazyLogging {
           val dimensionMatchString = outputManager.foundReadsCountsPerDimension.map{case(dim,count) => dim.name + " = " + Main.quickRound(count,readsProcessed) + "%"}.mkString(", ")
           val unmatchedPCT = Main.quickRound(outputManager.unassignedReads ,readsProcessed)
           logger.info("Processed " + readsProcessed + " reads so far; " + (readsProcessed - outputManager.unassignedReads) +
-            " reads were assigned (" + (100.0 - unmatchedPCT) + "%), read assignment rate per dimension: " + dimensionMatchString)
+            " reads were assigned (" + (100.0 - unmatchedPCT) + "%), read assignment rate per dimension: " + dimensionMatchString + "; error-correcting memory size: " + outputManager.errorPoolSize())
         }
       }
 

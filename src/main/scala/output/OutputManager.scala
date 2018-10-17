@@ -104,6 +104,10 @@ class OutputManager(recipeContainer: RecipeContainer, basePath: File, bufferSize
 
   }
 
+  def errorPoolSize(): Int = {
+    dimensionToCorrectorAndTransform.map{case(d,c,t) => c.sequenceMapping.size}.sum
+  }
+
   def close(): Unit = {
     logger.info("Closing cell output files")
     coordinateToCell.foreach{case(id,cell) => cell.close()}
