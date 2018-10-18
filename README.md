@@ -26,7 +26,13 @@ Get the scimaul jar file with a command like:
 wget https://github.com/aaronmck/SciMaul/releases/download/beta.0.0.2/SCIMaul-assembly-1.1.jar
 ```
 
+
 ## Running
+
+SCIMaul is run like any other jar file. Here we run with 4g of memory here, it's generally suggested to run with a higher set memory usage to give SCIMaul plenty of space to buffer reads and indices:
+```
+java -Xmx4g -jar SCIMaul-assembly-1.1.jar
+```
 
 The command-line options are available by calling the jar file without any options (or with the -h/--help flag):
 ```
@@ -60,8 +66,6 @@ to build the tool, and:
 sbt assembly
 
 to make a single jar version with all of the dependencies built in.
-
-## Running
 
 ## Recipe format
 
