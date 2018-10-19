@@ -4,22 +4,35 @@
     <img src ="https://github.com/aaronmck/SciMaul/raw/master/images/sci_maul.png" />
 </p>
 
-SciMaul is a index/barcode splitter for sequencing reads. SciMaul handles 'high-dimensional' configurations that include indices, UMI sequences, and static barcodes, producing a hierarchical directory structure based on these 'dimensions'. The goal is to have one tool that can split SCI experiments, 10X single-cell RNA-Seq, and droplet experiments within a single framework, all the while providing some simple statistics and data cleanup. SCIMaul's name comes from adding single-cell capabilities (SCI) to it's predecessor [Maul](https://github.com/aaronmck/Maul). SCIMaul isn't rocket-science, but I really wanted one common tool I could use to pre-process all single-cell data, and one input format that I could use to describe the layout of any sequencing run. 
+SciMaul is a index/barcode splitter for sequencing reads. SciMaul handles 'high-dimensional' configurations that include indices, UMI sequences, and static barcodes, producing output in a hierarchical directory structure based on these 'dimensions'. The goal is to have one tool that can split SCI experiments, 10X single-cell RNA-Seq, and droplet experiments within a single framework, all the while providing some simple statistics and data cleanup. SCIMaul's name comes from adding single-cell capabilities (SCI) to it's predecessor [Maul](https://github.com/aaronmck/Maul). SCIMaul isn't rocket-science, but I really wanted one common tool I could use to pre-process all single-cell data, and one input format that I could use to describe the layout of any sequencing run. 
 
 ## Things SCIMaul does:
 - Splits on arbitrary numbers of indices, located anywhere within a set of reads
 - Handles common configuration of read files (read 1 Fastq only, read 1 and 2, or with index files (up to 2))
 - Is somewhat optimized for speed in these applications, given the large numbers of dimensions
-- Can pull sequences from reads that you don't want to split on (static barcodes) or sequences you want to completely move to the read header (UMI sequences)
+- Can pull sequences from reads that you don't want to split on (static barcodes) or sequences you want to completely (re)move to the read header such as UMI sequences
 - When it can't find the specified barcode, it can align to the known barcode list to recover more reads (currently at a non-trivial speed cost)
-- Output a metadata file about the number of reads per cell, and other statistics
-- You encode everything about a your configuration in one(ish) json file (see below)
+- SCIMaul output a metadata file about the number of reads per cell, and other statistics
+- SCIMaul encodes everything about a run configuration in one(ish) json file (see below)
 
 ## Things it doesn't do well and TODO:
-- On the fly compressed output. Right now it can only output fastq files
+- On the fly compressed output. Right now it can only output fastq files. This will hopefully be fixed in the near future
 - Handle splitting directory from BCL/Illumina sequencer output. You'll need an unfiltered set of fastq file(s) to start things off
 
+## Get SCIMaul
+
+Get the scimaul jar file with a command like:
+```
+wget https://github.com/aaronmck/SciMaul/releases/download/beta.0.0.2/SCIMaul-assembly-1.1.jar
+```
+
+
 ## Running
+
+SCIMaul is run like any other jar file. Here we run with 4g of memory here, it's generally suggested to run with a higher set memory usage to give SCIMaul plenty of space to buffer reads and indices:
+```
+java -Xmx4g -jar SCIMaul-assembly-1.1.jar
+```
 
 The command-line options are available by calling the jar file without any options (or with the -h/--help flag):
 ```
@@ -53,8 +66,6 @@ to build the tool, and:
 sbt assembly
 
 to make a single jar version with all of the dependencies built in.
-
-## Running
 
 ## Recipe format
 
@@ -120,3 +131,8 @@ Optional json barcode fields are:
 - maxerror: the number of errors allowed when comparing sequences to the known list. The default is 1
 - align: should we try to align the observed sequences to the list of known sequences. This will recover barcodes with small indels, at a non-trivial cost in runtime. It's worth trying a sample both ways to see how much of an issue this is in your data
 
+## Output 
+
+SCIMaul generates structured data in the output folder specified. In the main folder there will be a fastq file set for the unassigned reads in the format cell.read<X>.fq. The assigned reads will be output into a directory structure, where each subdirectory corresponds to a read dimension. For instance if your base directory is ```data/cells```, you might have a subfolder combination ```11/A/D5/``` for the 11th column, row A, reverse transcription well D5. Within these folders cell data will be output in the format cell.read<X>.fq.
+
+Lastly a file called ```runStatistics.txt``` will be generated in the base output folder at the end of the run. This file contains a set of key-value pairs (separated by tabs) for various statistics collected for each cell, and for the run as a whole.
