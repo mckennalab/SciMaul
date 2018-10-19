@@ -5,13 +5,13 @@ import java.io.File
 import com.typesafe.scalalogging.LazyLogging
 import input.SequenceGenerator
 import org.slf4j.LoggerFactory
-import output.OutputManager
+import output.{DiskWriter, OutputManager}
 import picocli.CommandLine
 import recipe.RecipeContainer
 import transforms.ReadPosition
 import transforms.ReadPosition.ReadPosition
 import picocli.CommandLine._
-import ch.qos.logback.classic.{Level,Logger}
+import ch.qos.logback.classic.{Level, Logger}
 
 import scala.collection.mutable
 
@@ -64,8 +64,11 @@ class Main extends Runnable with LazyLogging {
   @Option(names = Array("-out", "--outputDir"), required = true, paramLabel = "FILE", description = Array("the output directory"))
   private var outputDir: File = new File("")
 
-  @Option(names = Array("-buffer", "--buffer"), paramLabel = "FILE", description = Array("the number of reads we should buffer before writing to the output"))
-  private var bufferSize: Int = 1000
+  @Option(names = Array("-buffer", "--buffer"), paramLabel = "INT", description = Array("the number of reads we should buffer before writing to the output"))
+  private var bufferSize: Int = 100
+
+  @Option(names = Array("-maxFiles", "--maxFiles"), paramLabel = "INT", description = Array("the number of files we allow the filesystem to have open at one time"))
+  private var fileHandleLimit: Int = 1000
 
   @Option(names = Array("-h", "--help"), usageHelp = true, description = Array("print this help and exit"))
   private var helpRequested: Boolean = false
@@ -91,6 +94,8 @@ class Main extends Runnable with LazyLogging {
         LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME).asInstanceOf[Logger].setLevel(Level.DEBUG)
       else
         LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME).asInstanceOf[Logger].setLevel(Level.INFO)
+
+      DiskWriter.maxOpenFiles = fileHandleLimit
 
       // *********************************************************************************
       // setup the inputs, mapping the read type to the input file if it exists
@@ -127,7 +132,7 @@ class Main extends Runnable with LazyLogging {
 
       // close everything up
       outputManager.close()
-
+      DiskWriter.close()
     }
   }
 

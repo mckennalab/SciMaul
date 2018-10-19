@@ -35,6 +35,10 @@ class BufferedOutputCell(coordinates: Coordinate, path: File, bufferSize: Int, r
   var readBuffer = new Array[ReadContainer](bufferSize)
   var haveWritten = false
 
+  // we're using an rich-get-richer scheme here: everytime the file writes, we make the buffer larger, up until the 'buffersize' max
+  var myBufferSize = 25
+
+
   // our statistics about the reads
   val stats = new CellStats(coordinates, readType)
 
@@ -46,15 +50,16 @@ class BufferedOutputCell(coordinates: Coordinate, path: File, bufferSize: Int, r
   val types = readType
 
   def addRead(read: ReadContainer): Unit = {
-    if (currentIndex >= bufferSize) {
+    if (currentIndex >= myBufferSize) {
       // write the reads out to disk -- again a while for speed in this inner loop
       var index = 0
       while(index < readOutput.size) {
         DiskWriter.write(OutputReads(readOutput(index), readBuffer.slice(0,currentIndex), types(index)))
         index += 1
       }
-      // readBuffer = new Array[ReadContainer](bufferSize)
-      // logger.debug("Wrote " + currentIndex + " reads to cell " + path)
+      // grow by doubling, up to the set buffer size
+      myBufferSize = math.min(myBufferSize * 2, bufferSize)
+      readBuffer = new Array[ReadContainer](bufferSize)
       currentIndex = 0
     }
     readBuffer(currentIndex) = read
@@ -100,13 +105,12 @@ object BufferedOutputCell extends LazyLogging {
   val cellName = "cell"
 
   /**
-    * write a read to a fastq file -- this function is a bit weird, as we should pass a matched tuple,
-    * as we assume the calling function has correctly determined the path
+    * convert a set of reads into an output string
     * @param path the file path to write to
     * @param reads the reads
     * @param read which read type we want to write
     */
-  def writeReadToFastqFile(path: File, reads: Array[ReadContainer], read: ReadPosition): Unit = {
+  def readsToFastqString(reads: Array[ReadContainer], read: ReadPosition): String = {
     //logger.info("Writing to " + path)
     //val output = gosAppend(path.getAbsolutePath)
 
@@ -125,8 +129,7 @@ object BufferedOutputCell extends LazyLogging {
       stringBuilder.append(fastqToString(extractor(rd),annotationString))
       index += 1
     }
-
-    FileUtils.write(path,stringBuilder,true)
+    stringBuilder.toString()
   }
 
   def fastqToString(fastq: FastqRecord, annotations: String): String = {

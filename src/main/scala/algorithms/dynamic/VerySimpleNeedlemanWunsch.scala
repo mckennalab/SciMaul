@@ -34,7 +34,19 @@ class VerySimpleNeedlemanWunsch(seqA: String) {
         scoreArray(0) = getXY(index1,index2) + (if (sequenceAArray(index1) == sequenceBArray(index2)) matched else error)
         scoreArray(1) = getXY(index1 + 1,index2) + error
         scoreArray(2) = getXY(index1,index2 + 1) + error
-        setXY(index1 + 1,index2 + 1,scoreArray.max)
+
+        // weirdly finding the max of scorearray was taking a lot of time, use a complex if to make it faster
+        if (scoreArray(0) > scoreArray(1))
+          if (scoreArray(0) > scoreArray(2))
+            setXY(index1 + 1,index2 + 1,scoreArray(0))
+          else
+            setXY(index1 + 1,index2 + 1,scoreArray(2))
+        else
+          if (scoreArray(1) > scoreArray(2))
+            setXY(index1 + 1,index2 + 1,scoreArray(1))
+          else
+            setXY(index1 + 1,index2 + 1,scoreArray(2))
+
         index2 += 1
       }
       index1 += 1
