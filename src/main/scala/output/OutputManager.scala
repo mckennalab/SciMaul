@@ -34,11 +34,11 @@ class OutputManager(recipeContainer: RecipeContainer, basePath: File, bufferSize
       foundReadsCountsPerDimension(dim._1) = 0
   }}
 
-  // for unassigned reads, in the end we want to print out the most common unassigned sequences we saw
+  /* for unassigned reads, in the end we want to print out the most common unassigned sequences we saw
   val confusingBarcodes = recipeContainer.resolvedDimensions.map{dim => {
     (dim, new mutable.LinkedHashMap[String,Int]())
   }}.toArray
-
+  */
   var unassignedReads = 0
 
   /**
@@ -54,7 +54,7 @@ class OutputManager(recipeContainer: RecipeContainer, basePath: File, bufferSize
     var readUnassigned = false
 
     var index = 0 // for speed, a while loop
-    while (index < dimensionToCorrectorAndTransform.size) {
+    while (index < dimensionToCorrectorAndTransform.size && !readUnassigned) {
 
       if (dimensionToCorrectorAndTransform(index)._3.isDimensioned) {
         dimensions += dimensionToCorrectorAndTransform(index)._1
@@ -69,7 +69,7 @@ class OutputManager(recipeContainer: RecipeContainer, basePath: File, bufferSize
           foundReadsCountsPerDimension(dimensionToCorrectorAndTransform(index)._1) += 1
           coordinates += corrected.get.sequence
         } else {
-          confusingBarcodes(index)._2(seqOfInterest) = confusingBarcodes(index)._2.getOrElse(seqOfInterest,0) + 1
+          // comment out while we use !readUnassigned in the while loop - our sampling is off then -- confusingBarcodes(index)._2(seqOfInterest) = confusingBarcodes(index)._2.getOrElse(seqOfInterest,0) + 1
           readUnassigned = true
         }
 
@@ -131,14 +131,14 @@ class OutputManager(recipeContainer: RecipeContainer, basePath: File, bufferSize
       }}
     }}
 
-    // output the top barcode
+    /* output the top barcode
     confusingBarcodes.foreach{case(dim,seqMap) => {
       val sortedEntries = mutable.LinkedHashMap(seqMap.toSeq.filter{case(k,v) => v > 5000}.sortWith(_._2 > _._2):_*)
       sortedEntries.foreach{case(seq,count) => {
         output.write("UnknownIndex\t" + seq + "\t" + dim.read + "\t" + count + "\n")
       }}
     }}
-
+    */
     output.close()
   }
 }

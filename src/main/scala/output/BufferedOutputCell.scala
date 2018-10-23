@@ -51,6 +51,7 @@ class BufferedOutputCell(coordinates: Coordinate, path: File, bufferSize: Int, r
 
   def addRead(read: ReadContainer): Unit = {
     if (currentIndex >= myBufferSize) {
+      haveWritten = true
       // write the reads out to disk -- again a while for speed in this inner loop
       var index = 0
       while(index < readOutput.size) {
