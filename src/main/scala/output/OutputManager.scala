@@ -112,7 +112,10 @@ class OutputManager(recipeContainer: RecipeContainer, basePath: File, bufferSize
     logger.info("Closing cell output files")
     coordinateToCell.foreach{case(id,cell) => cell.close()}
     cellOfTheUnknown.close()
+    outputSummaries()
+  }
 
+  def outputSummaries(): Unit = {
     logger.info("Generating master statistics file")
 
     val output = new PrintWriter(basePath.getAbsoluteFile + File.separator + "runStatistics.txt")
@@ -130,15 +133,7 @@ class OutputManager(recipeContainer: RecipeContainer, basePath: File, bufferSize
         output.write("Unknown\t" + name + "\t" + stat + "\n")
       }}
     }}
-
-    /* output the top barcode
-    confusingBarcodes.foreach{case(dim,seqMap) => {
-      val sortedEntries = mutable.LinkedHashMap(seqMap.toSeq.filter{case(k,v) => v > 5000}.sortWith(_._2 > _._2):_*)
-      sortedEntries.foreach{case(seq,count) => {
-        output.write("UnknownIndex\t" + seq + "\t" + dim.read + "\t" + count + "\n")
-      }}
-    }}
-    */
     output.close()
   }
+
 }

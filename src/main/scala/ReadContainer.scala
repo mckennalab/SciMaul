@@ -75,7 +75,7 @@ object ReadContainer {
     }
 
     read.metaData(name) = "=" + toSlice._2 + "," + toSlice._3
-    read.metaDataString.append(name + BufferedOutputCell.keyValueSeparator + "{" + toSlice._2 + "},{" + toSlice._3 + "}")
+    read.metaDataString.append(name + BufferedOutputCell.keyValueSeparator + "{" + toSlice._2 + "},{" + toSlice._3 + "};")
 
     readDim match {
       case ReadPosition.Read1 => read.read1 = Some(toSlice._1)

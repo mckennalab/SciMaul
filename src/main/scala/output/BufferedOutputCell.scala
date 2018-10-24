@@ -135,7 +135,7 @@ object BufferedOutputCell extends LazyLogging {
 
   def fastqToString(fastq: FastqRecord, annotations: String): String = {
     val stringBuilder = new mutable.StringBuilder()
-    stringBuilder.append(fastq.getReadHeader)
+    stringBuilder.append("@" + fastq.getReadHeader)
     stringBuilder.append("_")
     stringBuilder.append(annotations)
     stringBuilder.append("\n")
