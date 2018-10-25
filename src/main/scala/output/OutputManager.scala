@@ -41,6 +41,10 @@ class OutputManager(recipeContainer: RecipeContainer, basePath: File, bufferSize
   */
   var unassignedReads = 0
 
+  val dimensions  = new Array[ResolvedDimension](dimensionToCorrectorAndTransform.size)
+  val coordinates = new Array[Sequence](dimensionToCorrectorAndTransform.size)
+  var readUnassigned = false
+
   /**
     * add a read to the appropriate cell
     * @param readContainer
@@ -48,35 +52,30 @@ class OutputManager(recipeContainer: RecipeContainer, basePath: File, bufferSize
   def addRead(readContainer: ReadContainer): Unit = {
 
     var read = readContainer
-
-    val dimensions  = new mutable.ArrayBuffer[ResolvedDimension]()
-    val coordinates = new mutable.ArrayBuffer[Sequence]()
-    var readUnassigned = false
+    readUnassigned = false
 
     var index = 0 // for speed, a while loop
     while (index < dimensionToCorrectorAndTransform.size && !readUnassigned) {
 
       if (dimensionToCorrectorAndTransform(index)._3.isDimensioned) {
-        dimensions += dimensionToCorrectorAndTransform(index)._1
+        dimensions(index) = dimensionToCorrectorAndTransform(index)._1
 
-        val transformed = dimensionToCorrectorAndTransform(index)._3.transform(read)
+        val sliced = dimensionToCorrectorAndTransform(index)._3.transform(read)
 
         // correct the sequence to the known coordinate
-        val seqOfInterest = transformed.sequence.get
-        val corrected = dimensionToCorrectorAndTransform(index)._2.correctSequence(seqOfInterest) // a bit unsafe, but if it's dimensioned we should always have a sequence
+        val corrected = dimensionToCorrectorAndTransform(index)._2.correctSequence(sliced) // a bit unsafe, but if it's dimensioned we should always have a sequence
 
         if (corrected.isDefined) {
           foundReadsCountsPerDimension(dimensionToCorrectorAndTransform(index)._1) += 1
-          coordinates += corrected.get.sequence
+          coordinates(index) = corrected.get.sequence
         } else {
           // comment out while we use !readUnassigned in the while loop - our sampling is off then -- confusingBarcodes(index)._2(seqOfInterest) = confusingBarcodes(index)._2.getOrElse(seqOfInterest,0) + 1
           readUnassigned = true
         }
 
       } else {
-        dimensions += dimensionToCorrectorAndTransform(index)._1
-        read = dimensionToCorrectorAndTransform(index)._3.transform(read).readContainer
-
+        dimensions(index) = dimensionToCorrectorAndTransform(index)._1
+        dimensionToCorrectorAndTransform(index)._3.transform(read)
       }
 
       index += 1
@@ -86,7 +85,7 @@ class OutputManager(recipeContainer: RecipeContainer, basePath: File, bufferSize
 
       // we now have a corrected cell ID, make a coordinate, ask for a string, and
       // output that cell
-      val coordinate = new Coordinate(dimensions.toArray, coordinates.toArray)
+      val coordinate = new Coordinate(dimensions, coordinates)
       val coordinateString = coordinate.coordinateString()
 
       if (coordinateToCell contains coordinateString) {

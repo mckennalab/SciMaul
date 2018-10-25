@@ -10,7 +10,7 @@ class SliceTransform(dim: ResolvedDimension) extends ReadTransform {
 
   override def description: String = "SL." + dim.name + "." + dim.read + "." + dim.start + "." + dim.length
 
-  override def transform(read: ReadContainer): TransforedReadAndDimension = {
+  override def transform(read: ReadContainer): String = {
     ReadContainer.sliceAndAnnototate(read,dim.start,dim.length,name,dim.read,keepSequenceInRead)
   }
 

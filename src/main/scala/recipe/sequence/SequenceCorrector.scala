@@ -16,7 +16,7 @@ class SequenceCorrector(resolvedDimension: ResolvedDimension) extends LazyLoggin
 
   // to make this lookup as fast as possible, we'll make a mapping of every possible
   // one-base change to a barcode
-  val sequenceMapping = new mutable.LinkedHashMap[String, SequenceAndError]()
+  val sequenceMapping = new mutable.LinkedHashMap[String, Option[SequenceAndError]]()
 
   var collisions = 0
 
@@ -28,59 +28,53 @@ class SequenceCorrector(resolvedDimension: ResolvedDimension) extends LazyLoggin
   val conversionMemory = new mutable.HashMap[String, BarcodeTrio]()
 
 
-
-
   /**
     * correct an observed sequence to a set barcode, within a max distance (counting Ns in the barcode as
     * an automatic mismatch)
     *
-    * @param string the sequence to map onto the known barcodes
+    * @param string  the sequence to map onto the known barcodes
     * @param maxDist the maximum allowed distance of a potential match to a known barcode
-    *
     * @return the corrected sequence and distance
     */
   def correctSequence(string: String, maxDist: Int = 1): Option[SequenceAndError] = {
     assert(string.size == resolvedDimension.length, "This barcode is of the wrong length: " + string + " (should be len " + resolvedDimension.length + ")")
 
-    if (sequenceMapping contains string) {
-      return Some(sequenceMapping(string))
-    }
+    sequenceMapping.getOrElseUpdate(string, {
 
-    // this is where things get much more expensive -- we have to look through the whole list and
-    // find the closest hit by alignment. If we do find something we'll cache it for later lookup
-    var bestHitScore = Int.MaxValue
-    var bestHit: Option[SequenceAndError] = None
-    var dropSequence = false
 
-    if (resolvedDimension.allowAlignmentCorrection) {
-      resolvedDimension.sequences.foreach { case (sqs) => {
-        SequenceCorrector.alignmentMatch(string, sqs, maxDist).foreach{case(aligned) => {
-          if (aligned.error < bestHitScore) {
-            bestHit = Some(aligned)
-            bestHitScore = aligned.error
-          } else if (aligned.error == bestHitScore) {
-            val collisions = bestHit.get + "," + aligned
-            logger.debug("Ambiguous correction for " + resolvedDimension.name + " sequence: " + string + ". Read dropped to the unknown output file")
-            logger.debug(string + " -> " + collisions + ")")
+      // this is where things get much more expensive -- we have to look through the whole list and
+      // find the closest hit by alignment. If we do find something we'll cache it for later lookup
+      var bestHitScore = Int.MaxValue
+      var bestHit: Option[SequenceAndError] = None
+      var dropSequence = false
 
-            // in a collision we should drop the read to the unknown pile
-            dropSequence = true
+      if (resolvedDimension.allowAlignmentCorrection) {
+        resolvedDimension.sequences.foreach { case (sqs) => {
+          SequenceCorrector.alignmentMatch(string, sqs, maxDist).foreach { case (aligned) => {
+            if (aligned.error < bestHitScore) {
+              bestHit = Some(aligned)
+              bestHitScore = aligned.error
+            } else if (aligned.error == bestHitScore) {
+              val collisions = bestHit.get + "," + aligned
+              logger.debug("Ambiguous correction for " + resolvedDimension.name + " sequence: " + string + ". Read dropped to the unknown output file")
+              logger.debug(string + " -> " + collisions + ")")
+
+              // in a collision we should drop the read to the unknown pile
+              dropSequence = true
+            }
           }
-        }}
+          }
+        }
+        }
       }
-      }
-    }
 
-    if (dropSequence)
-      return None
+      if (dropSequence)
+        return None
 
-    // did we find something? if so cache the result so we don't do this lookup again
-    if (bestHit isDefined) {
-      sequenceMapping(string) = bestHit.get
-    }
-
-    bestHit
+      bestHit
+    })
   }
+
 
   /**
     * This function builds up the internal hash lookup tables for our sequences, generating a number of possible mismatch sequences that
@@ -91,7 +85,7 @@ class SequenceCorrector(resolvedDimension: ResolvedDimension) extends LazyLoggin
 
     resolvedDimension.sequences.foreach { case (seq) => {
       sequencePermutations += Tuple2[String, SequenceAndError](seq.name, SequenceAndError(seq, 0))
-      sequenceMapping(seq.sequence) = SequenceAndError(seq, 0)
+      sequenceMapping(seq.sequence) = Some(SequenceAndError(seq, 0))
     }
     }
 
@@ -111,11 +105,11 @@ class SequenceCorrector(resolvedDimension: ResolvedDimension) extends LazyLoggin
         sequencePermutations += Tuple2[String, SequenceAndError](fb, seqAndError)
 
         // check for collision
-        if ((sequenceMapping contains fb) && (sequenceMapping(fb).error != 1)){
+        if ((sequenceMapping contains fb) && (sequenceMapping(fb).get.error != 1)) {
           collisions += 1
           logger.warn("Collision with barcode " + fb + " from " + seqAndError.error + "'s from " + seqAndError.sequence)
         } else {
-          sequenceMapping(fb) = seqAndError
+          sequenceMapping(fb) = Some(seqAndError)
         }
       }
       }
@@ -129,6 +123,7 @@ case class SequenceAndError(sequence: Sequence, error: Int)
 object SequenceCorrector {
   /**
     * create all possible one-base changes of a sequence
+    *
     * @param code the original sequence
     * @return a List of all possible 1 base sequence changes
     */
@@ -145,7 +140,8 @@ object SequenceCorrector {
 
   /**
     * align two sequences with scoring parameters that allow for X mismatches or gaps
-    * @param candidate the first sequence to align
+    *
+    * @param candidate     the first sequence to align
     * @param knownSequence the second sequence to align
     * @return a Some of an alignment of the two sequences, or None if one coulnd't be found
     */
@@ -159,13 +155,14 @@ object SequenceCorrector {
     val allowedScore = aligner.errorsToScore(allowedMistakes)
 
     if (alignment >= allowedScore)
-      Some(SequenceAndError(knownSequence,aligner.scoreToErrors(alignment)))
+      Some(SequenceAndError(knownSequence, aligner.scoreToErrors(alignment)))
     else
       None
   }
 
   /**
     * a quick and dirty loookup function for all possible alternative bases.. there are better solutions than this
+    *
     * @param base the base of interest
     * @return an Array of all alternative bases (the full set exclusive of the provided base)
     */

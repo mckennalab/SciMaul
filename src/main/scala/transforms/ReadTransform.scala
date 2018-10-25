@@ -11,9 +11,7 @@ import transforms.ReadPosition.ReadPosition
 trait ReadTransform {
   def name: String
   def description: String
-  def transform(reads: ReadContainer): TransforedReadAndDimension
+  def transform(reads: ReadContainer): String
   def dimension: Option[ResolvedDimension]
   def isDimensioned: Boolean
 }
-
-case class TransforedReadAndDimension(readContainer: ReadContainer, sequence: Option[String])

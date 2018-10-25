@@ -14,14 +14,14 @@ class QualityScoreTransformReads(dim: Array[ResolvedDimension], minQual: Int, wi
 
   override def description: String = "Remove poor quality regions of reads"
 
-  override def transform(reads: ReadContainer): TransforedReadAndDimension = {
+  override def transform(reads: ReadContainer): String = {
     // TransforedReadAndDimension()
     reads.read1 = if (reads.read1.isDefined)
       Some(QualityScoreTransformReads.removeLowQualityEnd(reads.read1.get,minQual,windowSize)) else None
     reads.read2 = if (reads.read1.isDefined)
       Some(QualityScoreTransformReads.removeLowQualityEnd(reads.read1.get,minQual,windowSize)) else None
 
-    TransforedReadAndDimension(reads,None)
+    ""
   }
 
   override def dimension: Option[ResolvedDimension] = None
