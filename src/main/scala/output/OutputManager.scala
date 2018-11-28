@@ -42,7 +42,7 @@ class OutputManager(recipeContainer: RecipeContainer, basePath: File, bufferSize
   var unassignedReads = 0
 
   val dimensions  = new Array[ResolvedDimension](dimensionToCorrectorAndTransform.size)
-  val coordinates = new Array[Sequence](dimensionToCorrectorAndTransform.size)
+  val coordinates = new Array[Sequence](foundReadsCountsPerDimension.size)
   var readUnassigned = false
 
   /**
@@ -55,6 +55,7 @@ class OutputManager(recipeContainer: RecipeContainer, basePath: File, bufferSize
     readUnassigned = false
 
     var index = 0 // for speed, a while loop
+    var coordinateDim = 0 // for speed, a while loop
     while (index < dimensionToCorrectorAndTransform.size && !readUnassigned) {
 
       if (dimensionToCorrectorAndTransform(index)._3.isDimensioned) {
@@ -67,7 +68,8 @@ class OutputManager(recipeContainer: RecipeContainer, basePath: File, bufferSize
 
         if (corrected.isDefined) {
           foundReadsCountsPerDimension(dimensionToCorrectorAndTransform(index)._1) += 1
-          coordinates(index) = corrected.get.sequence
+          coordinates(coordinateDim) = corrected.get.sequence
+          coordinateDim += 1
         } else {
           // comment out while we use !readUnassigned in the while loop - our sampling is off then -- confusingBarcodes(index)._2(seqOfInterest) = confusingBarcodes(index)._2.getOrElse(seqOfInterest,0) + 1
           readUnassigned = true

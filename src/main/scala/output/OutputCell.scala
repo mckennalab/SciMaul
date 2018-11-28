@@ -8,6 +8,6 @@ import stats.CellStats
   */
 trait OutputCell {
   def addRead(read: ReadContainer)
-  def close()
+  def close(convertToCompressedFile: Boolean = true)
   def collectStats(): CellStats
 }

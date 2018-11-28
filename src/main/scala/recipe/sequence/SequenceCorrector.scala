@@ -39,40 +39,37 @@ class SequenceCorrector(resolvedDimension: ResolvedDimension) extends LazyLoggin
   def correctSequence(string: String, maxDist: Int = 1): Option[SequenceAndError] = {
     assert(string.size == resolvedDimension.length, "This barcode is of the wrong length: " + string + " (should be len " + resolvedDimension.length + ")")
 
-    sequenceMapping.getOrElseUpdate(string, {
+    if (!resolvedDimension.allowAlignmentCorrection) {
+      sequenceMapping.getOrElse(string, None)
+    } else {
+      sequenceMapping.getOrElseUpdate(string, {
+        // this is where things get much more expensive -- we have to look through the whole list and
+        // find the closest hit by alignment. If we do find something we'll cache it for later lookup
+        var bestHitScore = Int.MaxValue
+        var bestHit: Option[SequenceAndError] = None
+        var dropSequence = false
 
-
-      // this is where things get much more expensive -- we have to look through the whole list and
-      // find the closest hit by alignment. If we do find something we'll cache it for later lookup
-      var bestHitScore = Int.MaxValue
-      var bestHit: Option[SequenceAndError] = None
-      var dropSequence = false
-
-      if (resolvedDimension.allowAlignmentCorrection) {
-        resolvedDimension.sequences.foreach { case (sqs) => {
-          SequenceCorrector.alignmentMatch(string, sqs, maxDist).foreach { case (aligned) => {
-            if (aligned.error < bestHitScore) {
-              bestHit = Some(aligned)
-              bestHitScore = aligned.error
-            } else if (aligned.error == bestHitScore) {
-              val collisions = bestHit.get + "," + aligned
-              logger.debug("Ambiguous correction for " + resolvedDimension.name + " sequence: " + string + ". Read dropped to the unknown output file")
-              logger.debug(string + " -> " + collisions + ")")
-
-              // in a collision we should drop the read to the unknown pile
-              dropSequence = true
+        if (resolvedDimension.allowAlignmentCorrection) {
+          resolvedDimension.sequences.foreach { case (sqs) => {
+            SequenceCorrector.alignmentMatch(string, sqs, maxDist).foreach { case (aligned) => {
+              if (aligned.error < bestHitScore) {
+                bestHit = Some(aligned)
+                bestHitScore = aligned.error
+              } else if (aligned.error == bestHitScore) {
+                dropSequence = true
+              }
+            }
             }
           }
           }
         }
-        }
-      }
 
-      if (dropSequence)
-        return None
+        if (dropSequence)
+          return None
 
-      bestHit
-    })
+        bestHit
+      })
+    }
   }
 
 

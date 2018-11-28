@@ -27,8 +27,9 @@ import scala.collection.mutable
   * @param bufferSize how many reads to buffer before we dump them to disk; saves time and file handles
   * @param readType what type of reads are we expecting to see
   * @param outputType what file type do we write to?
+  * @param compressedExtension what extension should we tack onto the compressed output
   */
-class BufferedOutputCell(coordinates: Coordinate, path: File, bufferSize: Int, readType: Array[ReadPosition], cellPrefix: String = "cell") extends LazyLogging with OutputCell {
+class BufferedOutputCell(coordinates: Coordinate, path: File, bufferSize: Int, readType: Array[ReadPosition], cellPrefix: String = "cell", compressedExtension: String = ".gz") extends LazyLogging with OutputCell {
 
   // Our read buffer: to make things as fast as possible we'll allocate an array of the set size, and watch for overflow
   var currentIndex = 0
@@ -42,6 +43,7 @@ class BufferedOutputCell(coordinates: Coordinate, path: File, bufferSize: Int, r
   // our statistics about the reads
   val stats = new CellStats(coordinates, readType)
 
+  // setup the output files
   val readOutput = readType.map{ readType => {
     val outputFile = new File(path + File.separator + BufferedOutputCell.cellName + BufferedOutputCell.suffixSeparator + ReadPosition.fileExtension(readType))
     assert(!outputFile.exists(), "We wont overwrite old data; please remove the existing data file: " + outputFile.getAbsolutePath + " (and probably others)")
@@ -49,6 +51,10 @@ class BufferedOutputCell(coordinates: Coordinate, path: File, bufferSize: Int, r
   }}
   val types = readType
 
+  /**
+    * add a read to this output. If we overflow our buffer, write the data to disk
+    * @param read the read sequence to add
+    */
   def addRead(read: ReadContainer): Unit = {
     if (currentIndex >= myBufferSize) {
       haveWritten = true
@@ -74,18 +80,30 @@ class BufferedOutputCell(coordinates: Coordinate, path: File, bufferSize: Int, r
     * flush out any reads we have in storage -- only if we've written already, otherwise this is
     * a garbage cell (below the threshold) and shouldn't be output
     */
-  def close(): Unit = {
+  def close(convertToCompressedFile: Boolean = true): Unit = {
     //logger.debug("Current size = " + currentIndex)
     if (haveWritten && currentIndex >= 0) {
       var index = 0
-      while(index < readOutput.size) {
-        DiskWriter.write(OutputReads(readOutput(index), readBuffer.slice(0,currentIndex), types(index)))
+      while (index < readOutput.size) {
+        DiskWriter.write(OutputReads(readOutput(index), readBuffer.slice(0, currentIndex), types(index)))
         index += 1
       }
       currentIndex = -1
     }
-  }
 
+    if (haveWritten) {
+      readOutput.foreach{textOutput => {
+        DiskWriter.closeFile(textOutput)
+
+        val gzippedVersion = new File(textOutput.getAbsolutePath + compressedExtension)
+        DiskWriter.textToGZippedThenDelete(textOutput,gzippedVersion)
+      }}
+    }
+    }
+
+  /**
+    * @return the stats about this run
+    */
   def collectStats(): CellStats = stats
 }
 
@@ -111,7 +129,7 @@ object BufferedOutputCell extends LazyLogging {
     * @param reads the reads
     * @param read which read type we want to write
     */
-  def readsToFastqString(reads: Array[ReadContainer], read: ReadPosition): String = {
+  def writeFastqRecords(reads: Array[ReadContainer], read: ReadPosition, writer: BufferedWriter) {
     //logger.info("Writing to " + path)
     //val output = gosAppend(path.getAbsolutePath)
 
@@ -123,28 +141,30 @@ object BufferedOutputCell extends LazyLogging {
   }
 
     var index = 0
-    val stringBuilder = new mutable.StringBuilder()
     while (index < reads.size) {
       val rd = reads(index)
       val annotationString = rd.metaDataString.toString()
-      stringBuilder.append(fastqToString(extractor(rd),annotationString))
+      fastqToString(extractor(rd),annotationString,writer)
       index += 1
     }
-    stringBuilder.toString()
   }
 
-  def fastqToString(fastq: FastqRecord, annotations: String): String = {
-    val stringBuilder = new mutable.StringBuilder()
-    stringBuilder.append("@" + fastq.getReadHeader)
-    stringBuilder.append("_")
-    stringBuilder.append(annotations)
-    stringBuilder.append("\n")
-    stringBuilder.append(fastq.getReadString)
-    stringBuilder.append("\n")
-    stringBuilder.append("+")
-    stringBuilder.append("\n")
-    stringBuilder.append(fastq.getBaseQualityString)
-    stringBuilder.append("\n")
-    stringBuilder.toString()
+  /**
+    * convert a fastq record to a string representation, with our annotations
+    * @param fastq the fastq object
+    * @param annotations the annotations to attach to the read name
+    * @param writer
+    */
+  def fastqToString(fastq: FastqRecord, annotations: String, writer: BufferedWriter) {
+    writer.append("@" + fastq.getReadHeader.replace(" ","_"))
+    writer.append("_")
+    writer.append(annotations)
+    writer.append("\n")
+    writer.append(fastq.getReadString)
+    writer.append("\n")
+    writer.append("+")
+    writer.append("\n")
+    writer.append(fastq.getBaseQualityString)
+    writer.append("\n")
   }
 }

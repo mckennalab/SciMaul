@@ -3,7 +3,7 @@ package recipe
 import recipe.sequence.Sequence
 
 /**
-  * a matched set of dimensions and coordrinates
+  * a matched set of dimensions and coordinates
  *
   * @param dimensions the dimensions to map the coordinates into
   * @param coordinates the coordinates
