@@ -71,12 +71,14 @@ object DiskWriter {
     * @param output the output file to write
     */
   def textToGZippedThenDelete(input: File, output: File): Unit = {
-    val output = FileUtils.gos(output)
+    val outputWriter = FileUtils.gos(output.getAbsolutePath)
 
     Source.fromFile(input).getLines().foreach(line => {
-      output.write(line + "\n")
+      outputWriter.write(line + "\n")
     })
-    output.close()
+
+    input.delete()
+    outputWriter.close()
   }
 
 
