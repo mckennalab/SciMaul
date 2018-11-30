@@ -29,7 +29,7 @@ import scala.collection.mutable
   * @param outputType what file type do we write to?
   * @param compressedExtension what extension should we tack onto the compressed output
   */
-class BufferedOutputCell(coordinates: Coordinate, path: File, bufferSize: Int, readType: Array[ReadPosition], cellPrefix: String = "cell", compressedExtension: String = ".gz") extends LazyLogging with OutputCell {
+class BufferedOutputCell(coordinates: Coordinate, path: File, bufferSize: Int, readType: Array[ReadPosition], cellPrefix: String = "cell") extends LazyLogging with OutputCell {
 
   // Our read buffer: to make things as fast as possible we'll allocate an array of the set size, and watch for overflow
   var currentIndex = 0
@@ -89,15 +89,6 @@ class BufferedOutputCell(coordinates: Coordinate, path: File, bufferSize: Int, r
         index += 1
       }
       currentIndex = -1
-    }
-
-    if (haveWritten) {
-      readOutput.foreach{textOutput => {
-        DiskWriter.closeFile(textOutput)
-
-        val gzippedVersion = new File(textOutput.getAbsolutePath + compressedExtension)
-        DiskWriter.textToGZippedThenDelete(textOutput,gzippedVersion)
-      }}
     }
     }
 

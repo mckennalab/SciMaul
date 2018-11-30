@@ -7,6 +7,7 @@ import main.scala.ReadContainer
 import transforms.ReadPosition.ReadPosition
 import utils.FileUtils
 
+import scala.collection.mutable
 import scala.io.Source
 /*
 
@@ -24,6 +25,7 @@ object DiskWriter {
   val fileHandleLookup = new scala.collection.mutable.LinkedHashMap[String, BufferedWriter]()
   val lowToHighFileActivity = new collection.mutable.PriorityQueue[QueueOrder]()
 
+  val everWritten = new mutable.HashMap[String,Boolean]()
 
   /**
     * write the read contents out to the specified file
@@ -43,6 +45,7 @@ object DiskWriter {
 
     }
     BufferedOutputCell.writeFastqRecords(out.reads, out.read, fileHandleLookup(path))
+    everWritten(path) = true
   }
 
   /**
@@ -50,19 +53,20 @@ object DiskWriter {
     */
   def close(): Unit = {
     fileHandleLookup.foreach { case (fl, bw) => bw.flush(); bw.close() }
+    rewriteZipped()
   }
 
   /**
     * close a specific file (only if we have it open)
     * @param file the file to close, if open
     */
-  def closeFile(file: File): Unit = {
-    val path = file.getAbsolutePath
-    if (!(fileHandleLookup contains path)) {
-      fileHandleLookup(path).flush()
-      fileHandleLookup(path).close()
-      fileHandleLookup.remove(path)
-    }
+  def rewriteZipped(compressedExtension: String = ".gz"): Unit = {
+    println("Rewriting output as compressed files...")
+    everWritten.foreach{case(file,bool) => {
+      val gzippedVersion = new File(file + compressedExtension)
+      DiskWriter.textToGZippedThenDelete(new File(file),gzippedVersion)
+    }}
+
   }
 
   /**
