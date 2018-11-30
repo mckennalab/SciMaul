@@ -23,7 +23,7 @@ SciMaul is a index/barcode splitter for sequencing reads. SciMaul handles 'high-
 
 Get the scimaul jar file with a command like:
 ```
-wget https://github.com/aaronmck/SciMaul/releases/download/0.0.6/SCIMaul-assembly-0.0.6.jar
+wget https://github.com/aaronmck/SciMaul/releases/download/0.0.7/SCIMaul-assembly-0.0.7.jar
 ```
 
 
@@ -31,12 +31,12 @@ wget https://github.com/aaronmck/SciMaul/releases/download/0.0.6/SCIMaul-assembl
 
 SCIMaul is run like any other jar file. Here we run with 4g of memory here, it's generally suggested to run with a higher set memory usage to give SCIMaul plenty of space to buffer reads and indices:
 ```
-java -Xmx4g -jar SCIMaul-assembly-0.0.6.jar
+java -Xmx4g -jar SCIMaul-assembly-0.0.7.jar
 ```
 
 The command-line options are available by calling the jar file without any options (or with the -h/--help flag):
 ```
-java -jar SCIMaul-assembly-0.0.6.jar
+java -jar SCIMaul-assembly-0.0.7.jar
 Missing required options [--fastq1=FILE, --recipe=FILE, --outputDir=FILE]
 Usage: SCIMaul [-hvV] [-bc1=FILE] [-bc2=FILE] [-buffer=FILE] -fq1=FILE
                [-fq2=FILE] -out=FILE -rc=FILE
