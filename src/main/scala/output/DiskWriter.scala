@@ -53,7 +53,7 @@ object DiskWriter {
     */
   def close(): Unit = {
     fileHandleLookup.foreach { case (fl, bw) => bw.flush(); bw.close() }
-    rewriteZipped()
+    // rewriteZipped() -- this is sadly super slow right now -- make a buffered block gzip writer later to fix this
   }
 
   /**
