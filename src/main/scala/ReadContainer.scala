@@ -72,6 +72,7 @@ object ReadContainer {
     }
 
     //read.metaDataString = read.metaDataString.concat(name + BufferedOutputCell.keyValueSeparator + "{" + toSlice._2 + "},{" + toSlice._3 + "};")
+    read.metaDataString = read.metaDataString.concat(name)
     read.metaDataString = read.metaDataString.concat(BufferedOutputCell.keyValueSeparator)
     read.metaDataString = read.metaDataString.concat( "{")
     read.metaDataString = read.metaDataString.concat(toSlice._2)

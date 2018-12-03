@@ -9,15 +9,7 @@ import utils.FileUtils
 
 import scala.collection.mutable
 import scala.io.Source
-/*
 
-commented out for now
-class DiskWriter extends Actor {
-  override def receive: Receive = {
-    case e: OutputReads => BufferedOutputCell.writeReadToFastqFile(e.path,e.reads,e.read)
-  }
-}
-*/
 object DiskWriter {
 
   var maxOpenFiles = 1000

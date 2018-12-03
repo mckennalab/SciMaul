@@ -134,7 +134,7 @@ object BufferedOutputCell extends LazyLogging {
     var index = 0
     while (index < reads.size) {
       val rd = reads(index)
-      val annotationString = rd.metaDataString.toString()
+      val annotationString = rd.metaDataString
       fastqToString(extractor(rd),annotationString,writer)
       index += 1
     }
