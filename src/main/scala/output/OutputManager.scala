@@ -11,7 +11,11 @@ import transforms.{ReadTransform, TransformFactory}
 
 import scala.collection.mutable
 
-class OutputManager(recipeContainer: RecipeContainer, basePath: File, bufferSize: Int, readTypes: Array[ReadPosition]) extends LazyLogging {
+class OutputManager(recipeContainer: RecipeContainer,
+                    basePath: File,
+                    bufferSize: Int,
+                    readTypes: Array[ReadPosition],
+                    keepUnassignedReads: Boolean = false) extends LazyLogging {
 
   // setup a cell container, where we map a dimension onto a cell
   val coordinateToCell = new mutable.LinkedHashMap[String,BufferedOutputCell]()
@@ -64,14 +68,14 @@ class OutputManager(recipeContainer: RecipeContainer, basePath: File, bufferSize
         val sliced = dimensionToCorrectorAndTransform(index)._3.transform(read)
 
         // correct the sequence to the known coordinate
-        val corrected = dimensionToCorrectorAndTransform(index)._2.correctSequence(sliced) // a bit unsafe, but if it's dimensioned we should always have a sequence
+        // a bit unsafe, but if it's dimensioned we should always have a sequence
+        val corrected = dimensionToCorrectorAndTransform(index)._2.correctSequence(sliced)
 
         if (corrected.isDefined) {
           foundReadsCountsPerDimension(dimensionToCorrectorAndTransform(index)._1) += 1
           coordinates(coordinateDim) = corrected.get.sequence
           coordinateDim += 1
         } else {
-          // comment out while we use !readUnassigned in the while loop - our sampling is off then -- confusingBarcodes(index)._2(seqOfInterest) = confusingBarcodes(index)._2.getOrElse(seqOfInterest,0) + 1
           readUnassigned = true
         }
 
@@ -85,8 +89,7 @@ class OutputManager(recipeContainer: RecipeContainer, basePath: File, bufferSize
 
     if (!readUnassigned) {
 
-      // we now have a corrected cell ID, make a coordinate, ask for a string, and
-      // output that cell
+      // we now have a corrected cell ID, make a coordinate, ask for a string, and output that cell
       val coordinate = new Coordinate(dimensions, coordinates)
       val coordinateString = coordinate.coordinateString()
 
@@ -99,7 +102,9 @@ class OutputManager(recipeContainer: RecipeContainer, basePath: File, bufferSize
       }
     } else {
       unassignedReads += 1
-      cellOfTheUnknown.addRead(read)
+      if (keepUnassignedReads) {
+        cellOfTheUnknown.addRead(read)
+      }
     }
 
 
@@ -112,7 +117,8 @@ class OutputManager(recipeContainer: RecipeContainer, basePath: File, bufferSize
   def close(): Unit = {
     logger.info("Closing cell output files")
     coordinateToCell.foreach{case(id,cell) => cell.close()}
-    cellOfTheUnknown.close()
+    if (keepUnassignedReads)
+      cellOfTheUnknown.close()
     outputSummaries()
   }
 
@@ -131,7 +137,7 @@ class OutputManager(recipeContainer: RecipeContainer, basePath: File, bufferSize
     }}
     cellOfTheUnknown.stats.cellStats.foreach{st => {
       st.name.zip(st.stat).foreach{case(name,stat) => {
-        output.write("Unknown\t" + name + "\t" + stat + "\n")
+        output.write("Unknown\t" + name + "\tall\t" + stat + "\n")
       }}
     }}
     output.close()

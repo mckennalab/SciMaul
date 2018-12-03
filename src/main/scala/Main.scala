@@ -70,11 +70,11 @@ class Main extends Runnable with LazyLogging {
   @Option(names = Array("-maxFiles", "--maxFiles"), paramLabel = "INT", description = Array("the number of files we allow the filesystem to have open at one time"))
   private var fileHandleLimit: Int = 1000
 
+  @Option(names = Array("-kur", "--keep_unassigned_reads"), description = Array("We don't normally keep the unassigned reads. Setting this flag puts them into a set of fastqs in the main cell output directory"))
+  private var keepUnassignedReads: Boolean = false
+
   @Option(names = Array("-h", "--help"), usageHelp = true, description = Array("print this help and exit"))
   private var helpRequested: Boolean = false
-
-  @Option(names = Array("-V", "--version"), versionHelp = true, description = Array("print version info and exit"))
-  private var versionRequested: Boolean = false
 
   @Option(names = Array("-v", "--verbose"), description = Array("output additional processing information"))
   private var verbose: Boolean = false
@@ -86,8 +86,6 @@ class Main extends Runnable with LazyLogging {
   override def run(): Unit = {
     if (helpRequested) {
       new CommandLine(this).usage(System.err)
-    } else if (versionRequested) {
-      new CommandLine(this).printVersionHelp(System.err)
     } else {
       // setup the logging level
       if (verbose)
@@ -113,7 +111,7 @@ class Main extends Runnable with LazyLogging {
       val recipeManager = new RecipeContainer(recipeFile.getAbsolutePath)
 
       // create an output object
-      val outputManager = new OutputManager(recipeManager, outputDir, bufferSize, readTypeToFile.keysIterator.toArray)
+      val outputManager = new OutputManager(recipeManager, outputDir, bufferSize, readTypeToFile.keysIterator.toArray, keepUnassignedReads)
 
       // create read transforms from the recipe we've loaded
       var readsProcessed = 0
