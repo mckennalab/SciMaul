@@ -2,12 +2,10 @@ package recipe
 
 import java.io.File
 
-import barcodes.FastBarcode
 import com.typesafe.scalalogging.LazyLogging
 import org.json4s._
 import org.json4s.native.JsonMethods._
 import recipe.sequence.Sequence
-import utils.BitEncoding
 
 import scala.collection.mutable
 import scala.io.Source

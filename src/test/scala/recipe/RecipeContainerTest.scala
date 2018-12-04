@@ -1,7 +1,6 @@
 package recipe
 
 
-import algorithms.BarcodeEditDistance
 import org.scalatest.{FlatSpec, Matchers}
 
 

@@ -3,7 +3,6 @@ package recipe
 import algorithms.dynamic.VerySimpleNeedlemanWunsch
 import org.scalatest.{FlatSpec, Matchers}
 import recipe.sequence.{Sequence, SequenceCorrector}
-import utils.BitEncoding
 
 class SequenceCorrectorTest extends FlatSpec with Matchers {
 

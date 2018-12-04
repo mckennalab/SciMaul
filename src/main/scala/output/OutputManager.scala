@@ -1,23 +1,33 @@
 package output
 
 import java.io.{File, PrintWriter}
-
 import com.typesafe.scalalogging.LazyLogging
 import main.scala.ReadContainer
 import recipe._
 import recipe.sequence.{Sequence, SequenceCorrector}
 import transforms.ReadPosition.ReadPosition
 import transforms.{ReadTransform, TransformFactory}
-
 import scala.collection.mutable
 
+
+/**
+  * this class manages the numerous cell read containers
+  * @param recipeContainer the recipe container
+  * @param basePath the base path for cell output
+  * @param bufferSize how many reads can a cell hold in memory?
+  * @param readTypes the types of reads (READ1, READ2, etc)
+  * @param keepUnassignedReads do we want to hold onto unassigned reads
+  *
+  *                            TODO: THIS class is way too complicated, and
+  *                            needs to be cleaned out badly
+  */
 class OutputManager(recipeContainer: RecipeContainer,
                     basePath: File,
                     bufferSize: Int,
                     readTypes: Array[ReadPosition],
                     keepUnassignedReads: Boolean = false) extends LazyLogging {
 
-  // setup a cell container, where we map a dimension onto a cell
+  // setup a cell containers
   val coordinateToCell = new mutable.LinkedHashMap[String,BufferedOutputCell]()
   val cellOfTheUnknown = new BufferedOutputCell(new Coordinate(Array[ResolvedDimension](),Array[Sequence]()),
     basePath,
@@ -26,37 +36,34 @@ class OutputManager(recipeContainer: RecipeContainer,
     "unknownReads"
   )
 
+  // map each of the dimensions we have to a sequence corrector and a transform on the read sequence
   val dimensionToCorrectorAndTransform = recipeContainer.resolvedDimensions.map{dim => {
     (dim, new SequenceCorrector(dim),TransformFactory.dimensionToTransform(dim))
   }}.toArray
 
 
-  // we want to know what dimension is failing to match up to our lists: here we setup recording the assigned reads per dimension
+  // counts reads that pass filter per dimension
   val foundReadsCountsPerDimension = new mutable.LinkedHashMap[ResolvedDimension,Int]()
   dimensionToCorrectorAndTransform.map{ dim => {
     if (dim._3.isDimensioned)
       foundReadsCountsPerDimension(dim._1) = 0
   }}
 
-  /* for unassigned reads, in the end we want to print out the most common unassigned sequences we saw
-  val confusingBarcodes = recipeContainer.resolvedDimensions.map{dim => {
-    (dim, new mutable.LinkedHashMap[String,Int]())
-  }}.toArray
-  */
+  // keep a simple tally
   var unassignedReads = 0
 
-  val dimensions  = new Array[ResolvedDimension](dimensionToCorrectorAndTransform.size)
-  val coordinates = new Array[Sequence](foundReadsCountsPerDimension.size)
-  var readUnassigned = false
+
 
   /**
     * add a read to the appropriate cell
     * @param readContainer
     */
   def addRead(readContainer: ReadContainer): Unit = {
+    val dimensions  = new Array[ResolvedDimension](dimensionToCorrectorAndTransform.size)
+    val coordinates = new Array[Sequence](foundReadsCountsPerDimension.size)
+    var readUnassigned = false
 
     var read = readContainer
-    readUnassigned = false
 
     var index = 0 // for speed, a while loop
     var coordinateDim = 0 // for speed, a while loop

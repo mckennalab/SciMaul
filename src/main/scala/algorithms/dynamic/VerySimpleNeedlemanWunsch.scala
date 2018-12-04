@@ -51,8 +51,6 @@ class VerySimpleNeedlemanWunsch(seqA: String) {
       }
       index1 += 1
     }
-    // println(" ,-," + sequenceAArray.mkString(","))
-    // println((alignedMatrix.grouped(sequenceB.size + 1).zipWithIndex.map{case(m,i) => (if (i == 0) '-' else sequenceBArray(i-1)) + "," + m.mkString(",")}).mkString("\n"))
     getXY(index1,index2)
   }
 }

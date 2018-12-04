@@ -10,7 +10,7 @@ import scala.collection.mutable
 
 class CellStats(coordinates: Coordinate, readsCovered: Array[ReadPosition]) {
 
-  val cellStats = Array[CellStat](new ReadCount()) // ,new ReadLength(readsCovered)) //, new AverageQual(readsCovered))
+  val cellStats = Array[CellStat](new ReadCount())
 
   def addRead(read: ReadContainer): Unit = {
     var index = 0
@@ -20,8 +20,12 @@ class CellStats(coordinates: Coordinate, readsCovered: Array[ReadPosition]) {
     }
   }
 
-  def name: String = "Cell" + Coordinate.seperator + coordinates.coordinateString()
+  def name: String = {
+    "Cell" + Coordinate.seperator + coordinates.coordinateString()
+  }
 }
+
+
 
 trait CellStat {
   def addRead(read: ReadContainer)

@@ -3,17 +3,11 @@ package scala.output
 
 import java.io.File
 
-import barcodes.FastBarcode
-import htsjdk.samtools.fastq.FastqRecord
-import main.scala.ReadContainer
 import org.scalatest.{FlatSpec, Matchers}
 import output.CellPathGenerator
 import recipe.{Coordinate, ResolvedDimension}
 import recipe.sequence.Sequence
 import transforms.{ReadPosition, SequenceType}
-import transforms.ReadPosition._
-import transforms.SequenceType._
-import utils.BitEncoding
 
 class CellPathGeneratorTest extends FlatSpec with Matchers {
   "CellPathGenerator" should "generate a basic path correctly" in {

@@ -2,20 +2,16 @@ package output
 
 import java.io._
 
-import barcodes.FastBarcode
-import htsjdk.samtools.{SAMFileHeader, SAMRecord}
 import main.scala.ReadContainer
 import transforms.ReadPosition.ReadPosition
 
-import scala.collection.mutable.ArrayBuffer
 import java.util.zip._
 
 import com.typesafe.scalalogging.LazyLogging
 import htsjdk.samtools.fastq.FastqRecord
-import recipe.{Coordinate, ResolvedDimension}
+import recipe.Coordinate
 import stats.CellStats
 import transforms.ReadPosition
-import org.apache.commons.io.FileUtils
 
 import scala.collection.mutable
 
@@ -29,7 +25,7 @@ import scala.collection.mutable
   * @param outputType what file type do we write to?
   * @param compressedExtension what extension should we tack onto the compressed output
   */
-class BufferedOutputCell(coordinates: Coordinate, path: File, bufferSize: Int, readType: Array[ReadPosition], cellPrefix: String = "cell") extends LazyLogging with OutputCell {
+class BufferedOutputCell(coordinates: Coordinate, path: File, bufferSize: Int, readType: Array[ReadPosition], cellPrefix: String = "cell") extends LazyLogging {
 
   // Our read buffer: to make things as fast as possible we'll allocate an array of the set size, and watch for overflow
   var currentIndex = 0
@@ -38,7 +34,6 @@ class BufferedOutputCell(coordinates: Coordinate, path: File, bufferSize: Int, r
 
   // we're using an rich-get-richer scheme here: everytime the file writes, we make the buffer larger, up until the 'buffersize' max
   var myBufferSize = 25
-
 
   // our statistics about the reads
   val stats = new CellStats(coordinates, readType)
@@ -100,7 +95,7 @@ class BufferedOutputCell(coordinates: Coordinate, path: File, bufferSize: Int, r
 
 
 /**
-  * static methods on the OutputCell
+  * static methods
   */
 object BufferedOutputCell extends LazyLogging {
 

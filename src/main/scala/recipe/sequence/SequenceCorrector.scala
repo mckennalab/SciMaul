@@ -1,18 +1,13 @@
 package recipe.sequence
 
 import algorithms.dynamic.VerySimpleNeedlemanWunsch
-import barcodes.{BarcodeTrio, FastBarcode}
-import barcodes.FastBarcode.FastBarcode
 import com.typesafe.scalalogging.LazyLogging
 import recipe.ResolvedDimension
-import utils.BitEncoding
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 class SequenceCorrector(resolvedDimension: ResolvedDimension) extends LazyLogging {
-
-  val mask = FastBarcode.stringSizeToMask(resolvedDimension.length)
 
   // to make this lookup as fast as possible, we'll make a mapping of every possible
   // one-base change to a barcode
@@ -24,9 +19,6 @@ class SequenceCorrector(resolvedDimension: ResolvedDimension) extends LazyLoggin
   permuteErrorCodes()
   logger.info("For dimension " + resolvedDimension.name + " we generated " + sequenceMapping.size + " sequences with an allowed error count of " + resolvedDimension.maxError +
     "; we had " + collisions + " collisions when making potential error-mismatched sequences")
-
-  val conversionMemory = new mutable.HashMap[String, BarcodeTrio]()
-
 
   /**
     * correct an observed sequence to a set barcode, within a max distance (counting Ns in the barcode as

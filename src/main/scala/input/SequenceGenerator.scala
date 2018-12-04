@@ -10,6 +10,10 @@ import transforms.ReadPosition.ReadPosition
 import scala.collection.mutable
 import scala.io.Source
 
+/**
+  * Generate ReadContainer objects from a set of input files
+  * @param inputs the FASTQ files to iterate over, generating ReadContainers
+  */
 class SequenceGenerator(inputs: mutable.LinkedHashMap[ReadPosition, File]) extends Iterator[ReadContainer] {
 
   val read1 : FastqReader =
