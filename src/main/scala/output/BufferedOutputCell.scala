@@ -71,13 +71,10 @@ class BufferedOutputCell(coordinates: Coordinate, path: File, bufferSize: Int, r
     stats.addRead(read)
   }
 
-  /**
-    * flush out any reads we have in storage -- only if we've written already, otherwise this is
-    * a garbage cell (below the threshold) and shouldn't be output
-    */
-  def close(convertToCompressedFile: Boolean = true): Unit = {
+
+  def close(outputAllReads: Boolean = true): Unit = {
     //logger.debug("Current size = " + currentIndex)
-    if (haveWritten && currentIndex >= 0) {
+    if ((outputAllReads || haveWritten) && currentIndex >= 0) {
       var index = 0
       while (index < readOutput.size) {
         DiskWriter.write(OutputReads(readOutput(index), readBuffer.slice(0, currentIndex), types(index)))

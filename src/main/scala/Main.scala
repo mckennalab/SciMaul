@@ -5,7 +5,7 @@ import java.io.File
 import com.typesafe.scalalogging.LazyLogging
 import input.SequenceGenerator
 import org.slf4j.LoggerFactory
-import output.{DiskWriter, OutputManager}
+import output.{DiskWriter, MultiFileOutputManager}
 import picocli.CommandLine
 import recipe.RecipeContainer
 import transforms.ReadPosition
@@ -70,6 +70,9 @@ class Main extends Runnable with LazyLogging {
   @Option(names = Array("-maxFiles", "--maxFiles"), paramLabel = "INT", description = Array("the number of files we allow the filesystem to have open at one time"))
   private var fileHandleLimit: Int = 1000
 
+  @Option(names = Array("-oar", "--outputAllReads"), paramLabel = "BOOLEAN", description = Array("at the end of the run should we output all the reads?"))
+  private var outputAllReads: Boolean = false
+
   @Option(names = Array("-kur", "--keep_unassigned_reads"), description = Array("We don't normally keep the unassigned reads. Setting this flag puts them into a set of fastqs in the main cell output directory"))
   private var keepUnassignedReads: Boolean = false
 
@@ -111,7 +114,7 @@ class Main extends Runnable with LazyLogging {
       val recipeManager = new RecipeContainer(recipeFile.getAbsolutePath)
 
       // create an output object
-      val outputManager = new OutputManager(recipeManager, outputDir, bufferSize, readTypeToFile.keysIterator.toArray, keepUnassignedReads)
+      val outputManager = new MultiFileOutputManager(recipeManager, outputDir, bufferSize, readTypeToFile.keysIterator.toArray, keepUnassignedReads, outputAllReads)
 
       // create read transforms from the recipe we've loaded
       var readsProcessed = 0
