@@ -13,7 +13,9 @@ case class ResolvedDimension(name: String,
                              typeOf: SequenceType,
                              sequences: Array[Sequence],
                              maxError: Int,
-                             allowAlignmentCorrection: Boolean) extends Ordered[ResolvedDimension] {
+                             allowAlignmentCorrection: Boolean,
+                             mask: String,
+                             drop: Int) extends Ordered[ResolvedDimension] {
 
   /**
     * we need the dimensions to be sorted, so that we always apply transforms within a read from right
@@ -37,6 +39,14 @@ object ResolvedDimension {
     * @return a ResolvedDimension representation of this barcode and sequences
     */
   def apply(barcode: Dimension, sequences: Array[Sequence]): ResolvedDimension = {
+
+    val mask = if (barcode.mask.isDefined) {
+      barcode.mask.get
+    } else {
+      "*" * barcode.length
+    }
+
+
     ResolvedDimension(barcode.name,
       ReadPosition.fromString(barcode.read),
       barcode.start,
@@ -44,7 +54,9 @@ object ResolvedDimension {
       SequenceType.fromString(barcode.use),
       sequences,
       barcode.maxerror,
-      barcode.align)
+      barcode.align,
+      mask,
+      barcode.drop)
   }
 }
 

@@ -5,7 +5,7 @@ import java.io.File
 import com.typesafe.scalalogging.LazyLogging
 import input.SequenceGenerator
 import org.slf4j.LoggerFactory
-import output.{DiskWriter, MultiFileOutputManager}
+import output.{DiskWriter, MultiFileOutputManager, SingleFileOutputManger}
 import picocli.CommandLine
 import recipe.RecipeContainer
 import transforms.ReadPosition
@@ -82,6 +82,12 @@ class Main extends Runnable with LazyLogging {
   @Option(names = Array("-v", "--verbose"), description = Array("output additional processing information"))
   private var verbose: Boolean = false
 
+  @Option(names = Array("-s", "--singleFile"), description = Array("output a single set of FASTQ files for the run (reads are still annotated)"))
+  private var singleFile: Boolean = false
+
+  @Option(names = Array("-c", "--compressed"), description = Array("output compressed output files. The may open files for upwards of 4 times the number cells"))
+  private var compressedOutput: Boolean = false
+
   // *********************************************************************************
   // setup the logging
   System.setProperty("java.util.logging.SimpleFormatter.format", "[%1$tF %1$tT]:%4$s:(%2$s): %5$s%n")
@@ -114,7 +120,23 @@ class Main extends Runnable with LazyLogging {
       val recipeManager = new RecipeContainer(recipeFile.getAbsolutePath)
 
       // create an output object
-      val outputManager = new MultiFileOutputManager(recipeManager, outputDir, bufferSize, readTypeToFile.keysIterator.toArray, keepUnassignedReads, outputAllReads)
+      val outputManager =
+        if (!singleFile) {
+          new MultiFileOutputManager(recipeManager,
+            outputDir,
+            bufferSize,
+            readTypeToFile.keysIterator.toArray,
+            keepUnassignedReads,
+            outputAllReads,
+            compressedOutput)
+        } else {
+          new SingleFileOutputManger(recipeManager,
+            outputDir,
+            readTypeToFile.keysIterator.toArray,
+            keepUnassignedReads,
+            outputAllReads,
+            compressedOutput)
+        }
 
       // create read transforms from the recipe we've loaded
       var readsProcessed = 0
@@ -124,9 +146,9 @@ class Main extends Runnable with LazyLogging {
         readsProcessed += 1
 
         if (readsProcessed % 500000 == 0) {
-          val dimensionMatchString = outputManager.foundReadsCountsPerDimension.map{case(dim,count) => dim.name + " = " + Main.quickRound(count,readsProcessed) + "%"}.mkString(", ")
-          val unmatchedPCT = Main.quickRound(outputManager.unassignedReads ,readsProcessed)
-          logger.info("Processed " + readsProcessed + " reads so far; " + (readsProcessed - outputManager.unassignedReads) +
+          val dimensionMatchString = outputManager.getReadsPerDimension.map { case (dim, count) => dim.name + " = " + Main.quickRound(count, readsProcessed) + "%" }.mkString(", ")
+          val unmatchedPCT = Main.quickRound(outputManager.unAssignedReadCount, readsProcessed)
+          logger.info("Processed " + readsProcessed + " reads so far; " + (readsProcessed - outputManager.unAssignedReadCount) +
             " reads were assigned (" + (100.0 - unmatchedPCT) + "%), assiged reads after each dimension: " + dimensionMatchString + "; error-correcting map size: " + outputManager.errorPoolSize())
         }
       }

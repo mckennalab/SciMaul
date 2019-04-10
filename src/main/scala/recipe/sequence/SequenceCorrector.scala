@@ -28,8 +28,12 @@ class SequenceCorrector(resolvedDimension: ResolvedDimension) extends LazyLoggin
     * @param maxDist the maximum allowed distance of a potential match to a known barcode
     * @return the corrected sequence and distance
     */
-  def correctSequence(string: String, maxDist: Int = 1): Option[SequenceAndError] = {
-    assert(string.size == resolvedDimension.length, "This barcode is of the wrong length: " + string + " (should be len " + resolvedDimension.length + ")")
+  def correctSequence(baseString: String, maxDist: Int = 1): Option[SequenceAndError] = {
+
+    val string = if (resolvedDimension.drop == 0) baseString else baseString.slice(resolvedDimension.drop,baseString.size)
+
+    assert(string.size == resolvedDimension.length - resolvedDimension.drop,
+      "This barcode is of the wrong length: " + string + " (should be len " + (resolvedDimension.length - resolvedDimension.drop) + ")")
 
     if (!resolvedDimension.allowAlignmentCorrection) {
       sequenceMapping.getOrElse(string, None)
@@ -72,8 +76,14 @@ class SequenceCorrector(resolvedDimension: ResolvedDimension) extends LazyLoggin
   def permuteErrorCodes(): Unit = {
     val sequencePermutations = new ArrayBuffer[Tuple2[String, SequenceAndError]]()
 
-    resolvedDimension.sequences.foreach { case (seq) => {
-      sequencePermutations += Tuple2[String, SequenceAndError](seq.name, SequenceAndError(seq, 0))
+    val mySequences = if (resolvedDimension.drop == 0) {
+      resolvedDimension.sequences
+    } else {
+      resolvedDimension.sequences.map{str => Sequence(str.name, str.sequence.slice(resolvedDimension.drop,str.sequence.size))}
+    }.toArray
+
+    mySequences.foreach { case (seq) => {
+      sequencePermutations += Tuple2[String, SequenceAndError](seq.sequence, SequenceAndError(seq, 0))
       sequenceMapping(seq.sequence) = Some(SequenceAndError(seq, 0))
     }
     }
@@ -90,6 +100,7 @@ class SequenceCorrector(resolvedDimension: ResolvedDimension) extends LazyLoggin
           }
       }
       }
+
       addedError.foreach { case (fb, seqAndError) => {
         sequencePermutations += Tuple2[String, SequenceAndError](fb, seqAndError)
 

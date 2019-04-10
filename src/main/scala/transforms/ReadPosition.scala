@@ -21,11 +21,11 @@ object ReadPosition extends Enumeration {
     case _ => throw new IllegalStateException("Cant parse ReadPosition from: " + str)
   }
 
-  def fileExtension(readPosition: ReadPosition): String = readPosition match {
-    case Read1 => "read1.fq"
-    case Read2 => "read2.fq"
-    case Index1 => "index1.fq"
-    case Index2 => "index2.fq"
-    case All => "all.fq"
+  def fileExtension(readPosition: ReadPosition, isCompressed: Boolean): String = readPosition match {
+    case Read1 => "read1.fq" + (if (isCompressed) ".gz" else "")
+    case Read2 => "read2.fq" + (if (isCompressed) ".gz" else "")
+    case Index1 => "index1.fq" + (if (isCompressed) ".gz" else "")
+    case Index2 => "index2.fq" + (if (isCompressed) ".gz" else "")
+    case All => "all.fq" + (if (isCompressed) ".gz" else "")
   }
 }

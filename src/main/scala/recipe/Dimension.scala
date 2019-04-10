@@ -7,4 +7,6 @@ case class Dimension(name: String,
                      use: String,
                      sequences: Option[String],
                      maxerror: Int = 1,
-                     align: Boolean = false)
+                     align: Boolean = false,
+                     mask: Option[String],
+                     drop: Int = 0)

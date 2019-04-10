@@ -1,17 +1,21 @@
 package output
 
-import java.io.{File, PrintWriter}
+import java.io._
+import java.util.zip.GZIPOutputStream
+
 import com.typesafe.scalalogging.LazyLogging
 import main.scala.ReadContainer
 import recipe._
 import recipe.sequence.{Sequence, SequenceCorrector}
+import stats.CellStats
 import transforms.ReadPosition.ReadPosition
-import transforms.{ReadTransform, TransformFactory}
+import transforms.{ReadPosition, ReadTransform, TransformFactory}
+
 import scala.collection.mutable
 
 
 /**
-  * this class manages the numerous cell read containers
+  * this class manages a single output stream of reads
   * @param recipeContainer the recipe container
   * @param basePath the base path for cell output
   * @param bufferSize how many reads can a cell hold in memory?
@@ -21,28 +25,25 @@ import scala.collection.mutable
   *                            TODO: THIS class is way too complicated, and
   *                            needs to be cleaned out badly
   */
-class MultiFileOutputManager(recipeContainer: RecipeContainer,
+class SingleFileOutputManger(recipeContainer: RecipeContainer,
                              basePath: File,
-                             bufferSize: Int,
                              readTypes: Array[ReadPosition],
                              keepUnassignedReads: Boolean,
                              outputAllReads: Boolean,
                              compressedOutput: Boolean) extends OutputManager with LazyLogging {
 
-  // setup a cell containers
-  val coordinateToCell = new mutable.LinkedHashMap[String,OutputCell]()
-  val cellOfTheUnknown = new BufferedOutputCell(new Coordinate(Array[ResolvedDimension](),Array[Sequence]()),
-    basePath,
-    10000, // a larger buffer, as we'll write to this cell often
-    readTypes,
-    "unknownReads"
-  )
+  // setup the output files
+  val readOutput = readTypes.map{ readType => {
+    val outputFile = new File(basePath + File.separator + BufferedOutputCell.cellName + BufferedOutputCell.suffixSeparator + ReadPosition.fileExtension(readType, true))
+    assert(!outputFile.exists(), "We wont overwrite old data; please remove the existing data file: " + outputFile.getAbsolutePath + " (and probably others)")
+    val out = new BufferedWriter(new OutputStreamWriter(new GZIPOutputStream(new FileOutputStream(outputFile)), "UTF-8"))
+    (readType, out)
+  }}.toMap
 
   // map each of the dimensions we have to a sequence corrector and a transform on the read sequence
   val dimensionToCorrectorAndTransform = recipeContainer.resolvedDimensions.map{dim => {
     (dim, new SequenceCorrector(dim),TransformFactory.dimensionToTransform(dim))
   }}.toArray
-
 
   // counts reads that pass filter per dimension
   val foundReadsCountsPerDimension = new mutable.LinkedHashMap[ResolvedDimension,Int]()
@@ -54,6 +55,8 @@ class MultiFileOutputManager(recipeContainer: RecipeContainer,
   // keep a simple tally
   var unassignedReads = 0
 
+  // keep a map of coordinates to CellStats for any read that we see
+  val coordinateToCell = new mutable.LinkedHashMap[String,CellStats]()
 
 
   /**
@@ -98,32 +101,21 @@ class MultiFileOutputManager(recipeContainer: RecipeContainer,
       index += 1
     }
 
-    if (!readUnassigned) {
-
-      // we now have a corrected cell ID, make a coordinate, ask for a string, and output that cell
+    if (!readUnassigned || outputAllReads) {
+      // we now have a corrected cell ID, make a coordinate, ask for a string, and save stats on that cell
       val coordinate = new Coordinate(dimensions, coordinates)
       val coordinateString = coordinate.coordinateString()
 
-      if (coordinateToCell contains coordinateString) {
-        coordinateToCell(coordinateString).addRead(read)
-      } else {
-        val path = CellPathGenerator.outputPath(basePath, coordinate)
-        coordinateToCell(coordinateString) =
-          if (compressedOutput)
-            new CompressedOutputCell(coordinate, path, bufferSize, readTypes)
-          else
-            new BufferedOutputCell(coordinate, path, bufferSize, readTypes)
+      if (!(coordinateToCell contains coordinateString)) {
+        coordinateToCell(coordinateString) = new CellStats(coordinate,readTypes)
+      }
+      coordinateToCell(coordinateString).addRead(read)
 
-        coordinateToCell(coordinateString).addRead(read)
-      }
-    } else {
-      unassignedReads += 1
-      if (keepUnassignedReads) {
-        cellOfTheUnknown.addRead(read)
-      }
+      val readArray = Array[ReadContainer](read)
+      readOutput.foreach{case(position,writer) => BufferedOutputCell.writeFastqRecords(readArray, position, writer)}
     }
-
-
+    if (readUnassigned)
+      unassignedReads += 1
   }
 
   def errorPoolSize(): Int = {
@@ -132,9 +124,7 @@ class MultiFileOutputManager(recipeContainer: RecipeContainer,
 
   def close(): Unit = {
     logger.info("Closing cell output files")
-    coordinateToCell.foreach{case(id,cell) => cell.close()}
-    if (keepUnassignedReads)
-      cellOfTheUnknown.close(outputAllReads)
+    readOutput.foreach{case(pos,writer) => writer.close()}
     outputSummaries()
   }
 
@@ -144,18 +134,16 @@ class MultiFileOutputManager(recipeContainer: RecipeContainer,
     val output = new PrintWriter(basePath.getAbsoluteFile + File.separator + "runStatistics.txt")
     output.write("cell\tstatistic\tread\tvalue\n")
 
-    coordinateToCell.foreach{case(id,cell) => {
-      cell.stats.cellStats.foreach{st => {
+    coordinateToCell.foreach{case(id,stats) => {
+      stats.cellStats.foreach{st => {
         st.name.zip(st.stat).foreach{case(name,stat) => {
-          output.write(cell.stats.name + "\t" + name + "\t" + st.read + "\t" + stat + "\n")
+          output.write(stats.name + "\t" + name + "\t" + st.read + "\t" + stat + "\n")
         }}
       }}
     }}
-    cellOfTheUnknown.stats.cellStats.foreach{st => {
-      st.name.zip(st.stat).foreach{case(name,stat) => {
-        output.write("Unknown\t" + name + "\tall\t" + stat + "\n")
-      }}
-    }}
+
+    output.write("Unknown\treadCount\tall\t" + unassignedReads + "\n")
+
     output.close()
   }
 

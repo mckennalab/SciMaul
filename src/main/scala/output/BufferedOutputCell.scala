@@ -25,7 +25,11 @@ import scala.collection.mutable
   * @param outputType what file type do we write to?
   * @param compressedExtension what extension should we tack onto the compressed output
   */
-class BufferedOutputCell(coordinates: Coordinate, path: File, bufferSize: Int, readType: Array[ReadPosition], cellPrefix: String = "cell") extends LazyLogging {
+class BufferedOutputCell(coordinates: Coordinate,
+                         path: File,
+                         bufferSize: Int,
+                         readType: Array[ReadPosition],
+                         cellPrefix: String = "cell") extends OutputCell with LazyLogging {
 
   // Our read buffer: to make things as fast as possible we'll allocate an array of the set size, and watch for overflow
   var currentIndex = 0
@@ -36,11 +40,11 @@ class BufferedOutputCell(coordinates: Coordinate, path: File, bufferSize: Int, r
   var myBufferSize = 25
 
   // our statistics about the reads
-  val stats = new CellStats(coordinates, readType)
+  private val m_stats = new CellStats(coordinates, readType)
 
   // setup the output files
   val readOutput = readType.map{ readType => {
-    val outputFile = new File(path + File.separator + BufferedOutputCell.cellName + BufferedOutputCell.suffixSeparator + ReadPosition.fileExtension(readType))
+    val outputFile = new File(path + File.separator + BufferedOutputCell.cellName + BufferedOutputCell.suffixSeparator + ReadPosition.fileExtension(readType, false))
     assert(!outputFile.exists(), "We wont overwrite old data; please remove the existing data file: " + outputFile.getAbsolutePath + " (and probably others)")
     outputFile
   }}
@@ -87,7 +91,7 @@ class BufferedOutputCell(coordinates: Coordinate, path: File, bufferSize: Int, r
   /**
     * @return the stats about this run
     */
-  def collectStats(): CellStats = stats
+  def stats(): CellStats = stats
 }
 
 

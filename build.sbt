@@ -1,6 +1,6 @@
 name := "SCIMaul"
 
-version := "0.8"
+version := "0.9.1"
 
 scalaVersion := "2.12.5"
 

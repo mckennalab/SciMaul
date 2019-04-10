@@ -24,7 +24,9 @@ object DiskWriter {
     * @param out a container with the file to write to, the reads to write, and which position the file is (read1, etc)
     */
   def write(out: OutputReads): Unit = {
+
     val path = out.path.getAbsolutePath
+
     if (!(fileHandleLookup contains path)) {
       while (lowToHighFileActivity.size >= maxOpenFiles) {
         val fileToDrop = lowToHighFileActivity.dequeue()
@@ -45,42 +47,12 @@ object DiskWriter {
     */
   def close(): Unit = {
     fileHandleLookup.foreach { case (fl, bw) => bw.flush(); bw.close() }
-    // rewriteZipped() -- this is sadly super slow right now -- make a buffered block gzip writer later to fix this
   }
-
-  /**
-    * close a specific file (only if we have it open)
-    * @param file the file to close, if open
-    */
-  def rewriteZipped(compressedExtension: String = ".gz"): Unit = {
-    println("Rewriting output as compressed files...")
-    everWritten.foreach{case(file,bool) => {
-      val gzippedVersion = new File(file + compressedExtension)
-      DiskWriter.textToGZippedThenDelete(new File(file),gzippedVersion)
-    }}
-
-  }
-
-  /**
-    * copy the contents of a text file over to a gzipped version AND remove the text version
-    * @param input the input file to REMOVE AFTER THE COPY
-    * @param output the output file to write
-    */
-  def textToGZippedThenDelete(input: File, output: File): Unit = {
-    val outputWriter = FileUtils.gos(output.getAbsolutePath)
-
-    Source.fromFile(input).getLines().foreach(line => {
-      outputWriter.write(line + "\n")
-    })
-
-    input.delete()
-    outputWriter.close()
-  }
-
 
 }
 
 case class OutputReads(path: File, reads: Array[ReadContainer], read: ReadPosition)
+
 class QueueOrder(mPath: String, mCount: Int) extends Ordering[QueueOrder] {
   val path = mPath
   val count = mCount
